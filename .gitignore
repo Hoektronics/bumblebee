@@ -1,0 +1,9 @@
+*.pyc
+*.DS_Store
+.idea/
+config.json
+cache*
+engines*
+*.jpg
+*.log
+*.html
