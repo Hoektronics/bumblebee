@@ -49,6 +49,7 @@ class BumbleBee():
     self.workerDataAge = {}
     self.config = hive.config.get()
     self.lastScanData = None
+    self.lastImageTime = time.time()
     
     #check for default info.
     if not 'app_url' in self.config:
@@ -89,7 +90,7 @@ class BumbleBee():
     data['cameras'] = hive.scanCameras()
 	
     scanData = json.dumps(data)
-    if scanData != self.lastScanData:
+    if scanData != self.lastScanData or (self.lastImageTime + 60 > time.time()):
       self.lastScanData = scanData
       self.log.info("Device Scan Results: %s" % data)
 
