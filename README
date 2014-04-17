@@ -1,0 +1,22 @@
+BumbleBee
+---------
+
+BotQueue's client 'bumblebee'. This software is used to
+remotely control a 3d printer. If you have a printer that
+isn't currently supported with this software, please let
+us know on the github issues page.
+
+System Requirements
+-------------------
+- Mac OS X, Linux, or Raspberry PI
+- Python 2.7 or above, untested on Python 3
+
+Links:
+- https://botqueue.com/
+- https://github.com/Hoektronics/BotQueue
+- https://github.com/Hoektronics/engines
+
+Authors
+-------
+- Zach 'Hoeken' Smith
+- Justin Nesselrotte
