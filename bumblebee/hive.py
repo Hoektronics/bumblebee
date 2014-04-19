@@ -12,6 +12,7 @@ from threading import Thread
 import subprocess
 import drivers
 import re
+from distutils.spawn import find_executable
 
 class BeeConfig():
   
@@ -27,7 +28,8 @@ class BeeConfig():
   def load(self):
     try:
       if not os.path.exists("config.json"):
-        shutil.copy("config-dist.json", "config.json")
+        config_dist = os.path.dirname(os.path.realpath(__file__)) + os.sep + "config-dist.json";
+        shutil.copy(config_dist, "config.json")
       f = open("config.json", "r")
       self.data = json.load(f)
       f.close()
@@ -240,7 +242,7 @@ def scanBots():
   driver_names = ['printcoredriver']
   bots = {}
   for name in driver_names:
-    module_name = 'drivers.' + name
+    module_name = 'bumblebee.drivers.' + name
     __import__(module_name)
     found = getattr(drivers, name).scanPorts()
     if found:
@@ -252,8 +254,11 @@ def scanCameras():
   cameras = []
   myos = determineOS()
   if myos == "osx":
-    command = "./imagesnap -l"
+    command = os.path.dirname(os.path.realpath(__file__)) + os.sep + "imagesnap -l"
   elif myos == "raspberrypi" or myos == "linux":
+    # Check if it exists first
+    if (find_executable("uvcdynctrl") is None):
+      return cameras
     command = "uvcdynctrl -l -v"
   elif myos == "win" or myos == "unknown":
     return cameras
