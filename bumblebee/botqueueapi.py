@@ -33,7 +33,7 @@ class BotQueueAPI():
     self.endpoint_url = self.config['api']['endpoint_url']
     
     # this is helpful for raspberry pi and future websockets stuff
-    self.localip = self.getLocalIPAddress()
+    self.localip = getLocalIPAddress()
     
     #create our requests session.
     self.session = requests.session()
@@ -59,7 +59,7 @@ class BotQueueAPI():
     parameters['_client_name'] = self.name
     parameters['_uid'] = self.config['uid']
 
-    self.localip = self.getLocalIPAddress()
+    self.localip = getLocalIPAddress()
     if self.localip:
       parameters['_local_ip'] = self.localip
     parameters['api_call'] = call
@@ -291,12 +291,12 @@ class BotQueueAPI():
   def updateSliceJob(self, job_id=0, status="", output="", errors="", filename=""):
     return self.apiCall('updateslicejob', {'job_id':job_id, 'status':status, 'output':output, 'errors':errors}, filepath=filename)
 
-  def getLocalIPAddress(self):
-    try:
-      s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-      s.connect(("8.8.8.8",80))
-      ip = s.getsockname()[0]
-      s.close()
-    except socket.error as ex:
-      ip = None
-    return ip
+def getLocalIPAddress():
+  try:
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8",80))
+    ip = s.getsockname()[0]
+    s.close()
+  except socket.error as ex:
+    ip = None
+  return ip
