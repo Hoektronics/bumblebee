@@ -400,7 +400,7 @@ class printcore():
         else:
             #okay, we must be done!
             self.printing=False
-            self.printing=False
+            self.paused=False
             self.clear=True
             self.queueindex=0
             self.lineno=0

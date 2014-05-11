@@ -1,6 +1,3 @@
-#import pydevd
-#pydevd.settrace('localhost', port=7220)
-
 #Before importing ANYTHING, check if we have what we need
 def packagesInstalled():
   allInstalled = True
@@ -37,6 +34,7 @@ import hashlib
 import stacktracer
 import base64
 import json
+import camera_control
 
 class BumbleBee():
   
@@ -76,7 +74,7 @@ class BumbleBee():
     try:
       self.log.info("Loading bot %s" % data['name'])
       worker = workerbee.WorkerBee(data, mosi_queue, miso_queue)
-      worker.run();
+      worker.run()
     except KeyboardInterrupt as e:
       self.log.debug("Bot %s exiting from keyboard interrupt." % data['name'])
     except Exception as ex:
@@ -87,23 +85,22 @@ class BumbleBee():
     #look up our data
     data = {}
     data['bots'] = hive.scanBots()
-    data['cameras'] = hive.scanCameras()
-	
-    scanData = json.dumps(data)
-    if scanData != self.lastScanData or (self.lastImageTime + 60 > time.time()):
-      self.lastScanData = scanData
-      self.log.info("Device Scan Results: %s" % data)
+    data['cameras'] = camera_control.scanCameras()
 
-      #pull in images from the webcams and save them as base64
+    scanData = json.dumps(data)
+    if scanData != self.lastScanData or (self.lastImageTime + 60 < time.time()):
+      self.lastScanData = scanData
+
       camera_files = []
       if len(data['cameras']):
         for idx, camera in enumerate(data['cameras']):
           outfile = camera['name'] + '.jpg'
           try:
-            if hive.takePicture(camera['device'], watermark=None, output=outfile):
+            if camera_control.takePicture(camera['device'], watermark=None, output=outfile):
+              self.lastImageTime = time.time()
               camera_files.append(outfile)
           except Exception as ex:
-            self.exception(ex)
+            self.log.exception(ex)
 
       #now update the main site
       self.api.sendDeviceScanResults(data, camera_files)
@@ -185,7 +182,7 @@ class BumbleBee():
   def mainMenu(self, screen):
     try:
       self.screen = screen
-      self.screenSize = screen.getmaxyx();
+      self.screenSize = screen.getmaxyx()
       self.screen.nodelay(1) #non-blocking, so we can refresh the screen
 
       #Try/except for the terminals that don't support hiding the cursor
@@ -197,6 +194,7 @@ class BumbleBee():
       #when did we last update?
       lastBotUpdate = 0
       lastScreenUpdate = 0
+      lastScanUpdate = 0;
 
       #show an intro screen.
       self.screen.erase()
@@ -215,13 +213,14 @@ class BumbleBee():
         if (time.time() - lastScreenUpdate > 1):
           self.drawMenu()
           lastScreenUpdate = time.time()
+        if (time.time() - lastScanUpdate > 60):
+          self.scanDevices()
+          lastScanUpdate = time.time()
 
         #keyboard interface stuff.
         key = self.screen.getch()
         if key >= 0:
-          if key == ord('.'):
-            self.toggle()
-          elif key == ord('q'):
+          if key == ord('q'):
             self.handleQuit()
 
         time.sleep(self.sleepTime)
@@ -287,7 +286,7 @@ class BumbleBee():
     
     try:
       self.screen.erase()
-      self.screenSize = self.screen.getmaxyx();
+      self.screenSize = self.screen.getmaxyx()
       self.screen.addstr("BotQueue v%s\n" % (self.api.version))
       self.screen.addstr("Time: %s\n\n" % (time.asctime()))
       

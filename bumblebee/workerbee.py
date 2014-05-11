@@ -12,6 +12,7 @@ import logging
 import random
 import shutil
 import json
+import camera_control
 
 class WorkerBee():
   
@@ -100,7 +101,7 @@ class WorkerBee():
     __import__(module_name)
 
     if (self.config['driver'] == 's3g'):
-      return drivers.s3gdriver.s3gdriver(self.config);
+      return drivers.s3gdriver.s3gdriver(self.config)
     elif (self.config['driver'] == 'printcore'):
       return drivers.printcoredriver.printcoredriver(self.config)
     elif (self.config['driver'] == 'dummy'):
@@ -449,8 +450,7 @@ class WorkerBee():
         contrast = 50
         if 'contrast' in self.config['webcam']:
           contrast = self.config['webcam']['contrast']
-              
-        return hive.takePicture(device=device, watermark=watermark, output=filename, brightness=brightness, contrast=contrast)
+        return camera_control.takePicture(device=device, watermark=watermark, output=filename, brightness=brightness, contrast=contrast)
 
       else:
         return False

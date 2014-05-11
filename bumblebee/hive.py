@@ -10,9 +10,8 @@ import hashlib
 import time
 from threading import Thread
 import subprocess
+import signal
 import drivers
-import re
-from distutils.spawn import find_executable
 
 class BeeConfig():
   
@@ -136,67 +135,6 @@ class URLFile():
 
     return urlfile
 
-class Process():
-  def __init__(self, command):
-    self.info("Webcam Command: %s" % command)
-
-    self.p = None
-    self.outputLog = ""
-    self.errorLog = ""
-
-  def run(self):
-    # this starts our thread to slice the model into gcode
-    self.p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    while self.p.poll() is None:
-      output = self.p.stdout.readline()
-      if output:
-        self.log.info("Process: %s" % output.strip())
-        self.outputLog = self.outputLog + output
-                    
-      time.sleep(0.1)
-    
-    #get any last lines of output
-    output = self.p.stdout.readline()
-    while output:
-      self.log.info("Process: %s" % output.strip())
-      self.outputLog = self.outputLog + output
-      output = self.p.stdout.readline()
-
-    #get our errors (if any)
-    error = self.p.stderr.readline()
-    while error:
-      self.log.error("Process: %s" % error.strip())
-      self.errorLog = self.errorLog + error
-      error = self.p.stderr.readline()
-
-    self.info("Webcam: capture complete.")
-
-    #did we get errors?
-    if (self.errorLog or self.p.returncode > 0):
-      self.log.error("Errors detected.  Bailing.")
-      return False
-    else:
-      return True
-  
-  def kill(self):
-    if self.p:
-      try:
-        self.log.info("Killing process %d." % self.p.pid)
-        #self.p.terminate()
-        os.kill(self.p.pid, signal.SIGTERM)
-        t = 5 # max wait time in secs
-        while self.p.poll() < 0:
-          if t > 0.5:
-            t -= 0.25
-            time.sleep(0.25)
-          else: # still there, force kill
-            os.kill(self.p.pid, signal.SIGKILL)
-            time.sleep(0.5)
-        self.p.poll() # final try   
-      except OSError as ex:
-        #self.log.info("Kill exception: %s" % ex)
-        pass #successfully killed process
- 
 class Object(object):
   pass
 
@@ -242,108 +180,13 @@ def scanBots():
   driver_names = ['printcoredriver']
   bots = {}
   for name in driver_names:
-    module_name = 'bumblebee.drivers.' + name
+    module_name = 'drivers.' + name
     __import__(module_name)
     found = getattr(drivers, name).scanPorts()
     if found:
       bots[name] = found
 
   return bots
-
-def scanCameras():
-  cameras = []
-  myos = determineOS()
-  if myos == "osx":
-    command = os.path.dirname(os.path.realpath(__file__)) + os.sep + "imagesnap -l"
-  elif myos == "raspberrypi" or myos == "linux":
-    # Check if it exists first
-    if (find_executable("uvcdynctrl") is None):
-      return cameras
-    command = "uvcdynctrl -l -v"
-  elif myos == "win" or myos == "unknown":
-    return cameras
-
-  returned = subprocess.check_output(command, shell=True)
-  lines = returned.rstrip().split('\n')
-
-  if myos == "osx":
-    if len(lines) > 1:
-      for line in lines[1:]:
-        camera = {"id": line, "name": line, "device": line}
-        cameras.append(camera)
-  elif myos == "raspberrypi" or myos == "linux":
-    for line in lines:
-      matches = re.findall('(video\d+)[ ]+(.*) \[(.+), (.+)\]', line)
-      if matches:
-        camera = {"id": matches[0][3], "name": matches[0][1], "device": "/dev/" + matches[0][0]}
-        cameras.append(camera)
-      
-  return cameras
-
-def takePicture(device, watermark = None, output="webcam.jpg", brightness = 50, contrast = 50):
-  log = logging.getLogger('botqueue')
-
-  try:
-    #what os are we using
-    myos = determineOS()
-    if myos == "osx":
-      command = "./imagesnap -q -d '%s' -w 2.0 '%s' && sips --resampleWidth 640 --padToHeightWidth 480 640 --padColor FFFFFF -s formatOptions 60%% '%s' 2>/dev/null" % (
-        device,
-        output,
-        output
-      )
-    elif myos == "raspberrypi" or myos == "linux":
-      command = "exec /usr/bin/fswebcam -q --jpeg 60 -d '%s' -r 640x480 --title '%s' --set brightness=%s%% --set contrast=%s%% '%s'" % (
-        device,
-        watermark,
-        brightness,
-        contrast,
-        output
-      )
-    else:
-      raise Exception("Webcams are not supported on your OS (%s)." % myos)
-
-    log.info("Webcam Command: %s" % command)
-
-    outputLog = ""
-    errorLog = ""
-
-    # this starts our thread to slice the model into gcode
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    log.info("Webcam Capture started.")
-    while p.poll() is None:
-      output = p.stdout.readline()
-      if output:
-        log.info("Webcam: %s" % output.strip())
-        outputLog = outputLog + output
-
-      time.sleep(0.5)
-
-    #get any last lines of output
-    output = p.stdout.readline()
-    while output:
-      log.debug("Webcam: %s" % output.strip())
-      outputLog = outputLog + output
-      output = p.stdout.readline()
-
-    #get our errors (if any)
-    error = p.stderr.readline()
-    while error:
-      log.error("Webcam: %s" % error.strip())
-      errorLog = errorLog + error
-      error = p.stderr.readline()
-
-    log.info("Webcam: capture complete.")
-
-    #did we get errors?
-    if (errorLog or p.returncode > 0):
-      log.error("Errors detected.  Bailing.")
-      return False
-    else:
-      return True
-  except Exception as ex:
-    log.exception(ex)
-    return False
 
 def jsonNormalize(input):
   return json.loads(json.dumps(input))

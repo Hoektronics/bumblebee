@@ -8,6 +8,8 @@ def scanPorts():
   try:
     import serial.tools.list_ports
     return list(serial.tools.list_ports.comports())
+  except ImportError:
+    return None
   except Exception as ex:
     log = logging.getLogger('botqueue')
     log.error("Printcore cannot scan serial ports.")
