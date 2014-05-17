@@ -143,7 +143,7 @@ class Slic3r(GenericSlicer):
 
   def getSlicerPath(self):
     #Have we already figured out where we are?
-    if self.slicePath:
+    if self.slicePath and os.path.exists(self.slicePath):
       return self.slicePath
     #figure out where our path is.
     myos = hive.determineOS()
@@ -170,6 +170,11 @@ class Slic3r(GenericSlicer):
       os.remove(manifestFile)
       dirName = manifest['directory']
       self.slicePath = "%s/%s/%s" % (sliceEnginePath, dirName, manifest['path'])
+      if(os.path.exists(self.slicePath) == False):
+          self.log.debug("Cleaning up bad installation")
+          # todo Have it clean out any files in the folder first
+          os.rmdir(sliceEnginePath)
+          return self.getSlicerPath()
 
     return self.slicePath
 
