@@ -15,11 +15,11 @@ def __run_picture_command(command, log):
   errorLog = ""
   # this starts our thread to slice the model into gcode
   p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-  log.info("Webcam Capture started.")
+  #log.info("Webcam Capture started.")
   while p.poll() is None:
     output = p.stdout.readline()
     if output:
-      log.info("Webcam: %s" % output.strip())
+      #log.info("Webcam: %s" % output.strip())
       outputLog = outputLog + output
 
     time.sleep(0.5)
@@ -27,7 +27,7 @@ def __run_picture_command(command, log):
   #get any last lines of output
   output = p.stdout.readline()
   while output:
-    log.debug("Webcam: %s" % output.strip())
+    #log.debug("Webcam: %s" % output.strip())
     outputLog = outputLog + output
     output = p.stdout.readline()
 
@@ -37,7 +37,7 @@ def __run_picture_command(command, log):
     log.error("Webcam: %s" % error.strip())
     errorLog = errorLog + error
     error = p.stderr.readline()
-  log.info("Webcam: capture complete.")
+  #log.info("Webcam: capture complete.")
   #did we get errors?
   if (errorLog or p.returncode > 0):
     log.error("Errors detected.  Bailing.")
@@ -59,7 +59,7 @@ def takePicture(device, watermark=None, output="webcam.jpg", brightness=50, cont
           output,
           output
         )
-        log.info("Webcam Command: %s" % command)
+        #log.info("Webcam Command: %s" % command)
         return __run_picture_command(command, log)
       elif myos == "raspberrypi" or myos == "linux":
         if device == "Rasberry Pi Camera":
@@ -77,7 +77,7 @@ def takePicture(device, watermark=None, output="webcam.jpg", brightness=50, cont
             contrast,
             output
           )
-          log.info("Webcam Command: %s" % command)
+          #log.info("Webcam Command: %s" % command)
           return __run_picture_command(command, log)
       else:
         raise Exception("Webcams are not supported on your OS (%s)." % myos)
