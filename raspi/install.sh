@@ -4,7 +4,7 @@ sudo apt-get update -qy
 sudo apt-get upgrade -qy
 
 #install webcam tools
-sudo apt-get install fswebcam uvcdynctrl v4l-utils
+sudo apt-get install fswebcam uvcdynctrl v4l-utils python-picamera
 
 #get Botqueue linked up and working on boot.
 sudo apt-get install -qy git-core vim screen python-pip

@@ -65,10 +65,14 @@ def takePicture(device, watermark=None, output="webcam.jpg", brightness=50, cont
         if device == "Rasberry Pi Camera":
           import picamera
 
-          with picamera.PiCamera() as camera:
-            camera.capture(output, resize=(640, 480))
-            camera.close()
-            return True
+          try:
+            with picamera.PiCamera() as camera:
+              camera.capture(output, resize=(640, 480))
+              camera.close()
+              return True
+          except picamera.exc.PiCameraError as ex:
+            #No need to log an exception here
+            return False
         else:
           command = "exec /usr/bin/fswebcam -q --jpeg 60 -d '%s' -r 640x480 --title '%s' --set brightness=%s%% --set contrast=%s%% '%s'" % (
             device,
