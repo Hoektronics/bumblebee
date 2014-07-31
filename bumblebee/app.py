@@ -371,5 +371,4 @@ class BumbleBee():
 #if __name__ == '__main__':
   #bee = BumbleBee()
   #bee.main()
-print dir();
 print __version__
