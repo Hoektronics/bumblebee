@@ -1,39 +1,40 @@
-import time
-import logging
-
 from bumblebee import botqueueapi
 from bumblebee import hive
 
+
 class APITest():
-  def __init__(self):
-    hive.loadLogger()
-    self.api = botqueueapi.BotQueueAPI()
-    self.config = hive.config.get()
+    def __init__(self):
+        hive.loadLogger()
+        self.api = botqueueapi.BotQueueAPI()
+        self.config = hive.config.get()
 
-  def main(self):
-    print "Starting up"
-        
-    try:
-      #jobs = self.api.createJobFromJob(50)
-      #self.printJobs(jobs)
-      
-      #jobs = self.api.createJobFromURL('http://www.thingiverse.com/download:91915', name="test name", queue_id = 470)
-      #print jobs
+    def main(self):
+        print "Starting up"
 
-      #jobs = self.api.createJobFromFile("test.stl")
-      #self.printJobs(jobs)
+        try:
+            # jobs = self.api.createJobFromJob(50)
+            # self.printJobs(jobs)
 
-      bots = self.api.listBots()
-      for bot in bots['data']:
-        print bot['driver_config']
+            # jobs = self.api.createJobFromURL('http://www.thingiverse.com/download:91915',
+            #                                 name="test name",
+            #                                 queue_id=470)
+            # print jobs
 
-    except KeyboardInterrupt as e:
-      pass
+            # jobs = self.api.createJobFromFile("test.stl")
+            # self.printJobs(jobs)
 
-  def printJobs(self, jobs):
-    for job in jobs["data"]:
-      print "Added: %s" % job["name"]
+            bots = self.api.listBots()
+            for bot in bots['data']:
+                print bot['driver_config']
+
+        except KeyboardInterrupt:
+            pass
+
+    def printJobs(self, jobs):
+        for job in jobs["data"]:
+            print "Added: %s" % job["name"]
+
 
 if __name__ == '__main__':
-  a = APITest()
-  a.main()
+    a = APITest()
+    a.main()
