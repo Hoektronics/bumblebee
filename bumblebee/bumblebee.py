@@ -21,6 +21,12 @@ if not packagesInstalled():
   import sys
   sys.exit()
 
+from . import __version__
+#from ._version import get_versions
+#__version__ = get_versions()['version']
+#print __version__
+#del get_versions
+
 import botqueueapi
 import workerbee
 import threading
@@ -362,6 +368,8 @@ class BumbleBee():
       raise Exception("Error finding new job: %s" % result['error'])
     return False
 
-if __name__ == '__main__':
-  bee = BumbleBee()
-  bee.main()
+#if __name__ == '__main__':
+  #bee = BumbleBee()
+  #bee.main()
+print dir();
+print __version__

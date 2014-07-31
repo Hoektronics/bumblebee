@@ -7,3 +7,6 @@ engines*
 *.jpg
 *.log
 *.html
+build/
+dist/
+*.egg-info/

@@ -2,3 +2,5 @@ recursive-include bumblebee *.py
 recursive-include bumblebee *.json
 recursive-include bumblebee/drivers *.py
 recursive-include bumblebee/drivers/makerbot_driver *.hh
+include versioneer.py
+include bumblebee/_version.py
