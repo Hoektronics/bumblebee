@@ -18,5 +18,8 @@ chmod a+x $HOME/BotQueue/bumblebee/raspi/bin/bumblebee
 cat $HOME/BotQueue/bumblebee/raspi/profile >> $HOME/.profile
 source $HOME/.profile
 
+cd ..
+python setup.py install
+
 #authorize our app now.
 screen -dR botqueue bumblebee

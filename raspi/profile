@@ -1,7 +1,4 @@
 
-#add in bumblebee path
-export PATH=$HOME/BotQueue/bumblebee/raspi/bin:$PATH
-
 #startup of botqueue on tty8
 if [ $(tty) = /dev/tty8 ]; then
     setterm -blank 0

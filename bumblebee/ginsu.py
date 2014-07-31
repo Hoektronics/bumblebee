@@ -1,19 +1,21 @@
-import time
+import json
 import logging
-from threading import Thread, RLock
-import sys
-import tempfile
-import subprocess
 import os
-import stat
-import signal
-import hive
+from pprint import pprint
 import re
+import signal
+import stat
+import StringIO
+import subprocess
+import sys
+import tarfile
+import tempfile
+from threading import Thread, RLock
+import time
 import urllib2
 import tarfile
-import json
-from pprint import pprint
-import StringIO
+
+from bumblebee import hive
 
 class Ginsu():
   # A static lock for when other threads try to download a slicer

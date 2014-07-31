@@ -1,11 +1,12 @@
-import hive
-import os
-import logging
-import time
-import re
 from distutils.spawn import find_executable
-from threading import Lock
+import logging
+import os
+import re
 import subprocess
+from threading import Lock
+import time
+
+from bumblebee import hive
 
 mutex = Lock();
 

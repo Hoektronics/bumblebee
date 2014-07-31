@@ -1,8 +1,8 @@
-import botqueueapi
 import time
-import hive
 import logging
-import webbrowser
+
+from bumblebee import botqueueapi
+from bumblebee import hive
 
 class APITest():
   def __init__(self):

@@ -22,25 +22,20 @@ if not packagesInstalled():
   sys.exit()
 
 from . import __version__
-#from ._version import get_versions
-#__version__ = get_versions()['version']
-#print __version__
-#del get_versions
-
-import botqueueapi
-import workerbee
-import threading
-import Queue
-import time
-import hive
-import logging
-import curses
-import webbrowser
-import hashlib
-import stacktracer
 import base64
+import curses
+import hashlib
 import json
-import camera_control
+import logging
+import stacktracer
+import threading
+import time
+import Queue
+
+from bumblebee import botqueueapi
+from bumblebee import camera_control
+from bumblebee import hive
+from bumblebee import workerbee
 
 class BumbleBee():
   
@@ -371,5 +366,3 @@ class BumbleBee():
 def main():
   bee = BumbleBee()
   bee.main()
-
-print __version__

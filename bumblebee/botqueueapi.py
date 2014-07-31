@@ -1,11 +1,13 @@
 import json
-import hive
 import logging
-import time
-from oauth_hook import OAuthHook
 import socket
-import requests
+import time
 import urlparse
+
+from oauth_hook import OAuthHook
+import requests
+
+from bumblebee import hive
 
 class NetworkError(Exception):
   pass
