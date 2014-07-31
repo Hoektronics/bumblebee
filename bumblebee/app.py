@@ -368,7 +368,8 @@ class BumbleBee():
       raise Exception("Error finding new job: %s" % result['error'])
     return False
 
-#if __name__ == '__main__':
-  #bee = BumbleBee()
-  #bee.main()
+def main():
+  bee = BumbleBee()
+  bee.main()
+
 print __version__

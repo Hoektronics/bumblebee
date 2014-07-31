@@ -32,7 +32,7 @@ setup(name=NAME,
       url=URL,
       packages=PACKAGES,
       entry_points={
-         "console_scripts":["bumblebee = bumblebee:main"]
+         "console_scripts":["bumblebee = bumblebee.app:main"]
       },
       ext_modules=EXT_MODULES,
       package_data=PKG_DATA
