@@ -1,9 +1,5 @@
-import versioneer
-versioneer.VCS = 'git'
-versioneer.versionfile_source = 'bumblebee/_version.py'
-versioneer.versionfile_build = 'bumblebee/_version'
-versioneer.tag_prefix = ''
-versioneer.parentdir_prefix = 'bumblebee-'
+from esky import bdist_esky
+from distutils.core import setup
 
 import sys
 from setuptools import find_packages
@@ -16,15 +12,17 @@ NAME = "bumblebee"
 DESCRIPTION = "BotQueue's client bumblebee"
 URL = "http://github.com/Hoektronics/bumblebee/"
 
-PACKAGES = find_packages()
+PACKAGES = ["bumblebee"]
 EXT_MODULES = []
 PKG_DATA = {"bumblebee":["config-dist.json"]}
 INCLUDES = ["requests", "serial"]
 EXCLUDES = ["pydoc"]
+SCRIPTS = ["bumblebee/app.py"]
+OPTIONS = {"bdist_esky": {
+    "freezer_module":"py2app"
+}}
 
 setup(name=NAME,
-      version=versioneer.get_version(),
-      cmdclass=versioneer.get_cmdclass(),
       author="Zach 'Hoeken' Smith",
       author_email="hoeken@gmail.com",
       maintainer="Justin Nesselrotte",
@@ -34,7 +32,9 @@ setup(name=NAME,
       entry_points={
          "console_scripts":["bumblebee = bumblebee.app:main"]
       },
+      scripts=SCRIPTS,
       ext_modules=EXT_MODULES,
-      package_data=PKG_DATA
+      package_data=PKG_DATA,
+      options=OPTIONS
      )
 
