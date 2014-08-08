@@ -60,7 +60,7 @@ class BotQueueAPI():
         # what url to use?
         if not parameters:
             parameters = {}
-        if url is not None:
+        if url is None:
             url = self.endpoint_url
 
         # add in our special variables
