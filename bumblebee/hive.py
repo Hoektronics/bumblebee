@@ -186,7 +186,7 @@ def scanBots():
     driver_names = ['printcoredriver']
     bots = {}
     for name in driver_names:
-        module_name = 'drivers.' + name
+        module_name = 'bumblebee.drivers.' + name
         __import__(module_name)
         found = getattr(drivers, name).scanPorts()
         if found:
