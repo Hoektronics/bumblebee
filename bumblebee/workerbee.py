@@ -94,7 +94,7 @@ class WorkerBee():
 
     def driverFactory(self):
 
-        module_name = 'drivers.' + self.config['driver'] + 'driver'
+        module_name = 'bumblebee.drivers.' + self.config['driver'] + 'driver'
         __import__(module_name)
 
         if (self.config['driver'] == 's3g'):
