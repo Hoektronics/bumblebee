@@ -149,7 +149,7 @@ def scanCameras():
             __scanCamerasOSX(cameras)
         elif myos == "linux":
             __scanCameraLinux(cameras)
-        elif myos == "raspberrypi":
-            __scanCameraRaspi(cameras)
+        #elif myos == "raspberrypi":
+            #__scanCameraRaspi(cameras)
 
     return cameras
