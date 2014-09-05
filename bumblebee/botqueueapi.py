@@ -103,6 +103,9 @@ class BotQueueAPI():
                 # sweet, our request must have gone through.
                 self.netStatus = True
 
+                # Do we even care if there's an error?
+                if ignoreInvalid:
+                    return result
                 # did we get the right http response code?
                 if response.status_code != 200:
                     raise ServerError("Bad response code (%s)" % response.status_code)
@@ -115,7 +118,6 @@ class BotQueueAPI():
                     # is the site database down?
                     if result['error'] == "Failed to connect to database!":
                         raise ServerError("Database is down.")
-                    # shit, de-authed?  re-auth!
                     if result['error'] == "Invalid token" and not ignoreInvalid:
                         raise AuthError("Token invalid, re-authorizing.")
 

@@ -33,7 +33,6 @@ hive.config.save(config)
 print "We're about to start the authorization process"
 
 api = botqueueapi.BotQueueAPI()
-api.authorize()
 
 print "All done!"
 print ""
