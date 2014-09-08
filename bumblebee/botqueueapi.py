@@ -22,7 +22,7 @@ class AuthError(Exception):
 
 
 class BotQueueAPI():
-    version = '0.4'
+    version = '0.5'
     name = 'Bumblebee'
     localip = None
 
