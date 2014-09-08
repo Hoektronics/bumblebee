@@ -2,7 +2,9 @@ import curses
 import hashlib
 import json
 import logging
+import os
 import stacktracer
+import sys
 import threading
 import time
 import Queue
@@ -12,6 +14,19 @@ from bumblebee import camera_control
 from bumblebee import hive
 from bumblebee import workerbee
 
+lib_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)) + os.sep + 'drivers')
+lib_path = lib_path + os.sep + 'Printrun'
+print lib_path
+sys.path.append(lib_path)
+
+# Import so we don't see the annoying text
+from printrun import printcore
+from printrun import gcoder
+
+# Nuke their logger
+# See https://github.com/kliment/Printrun/issues/561
+logger = logging.getLogger()
+logger.handlers = []
 
 class BumbleBee():
     sleepTime = 0.5

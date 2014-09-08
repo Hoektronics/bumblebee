@@ -1,9 +1,18 @@
-import bumbledriver
-import printcore
 import time
 import logging
+import os
+import sys
 from threading import Thread
+import re
 
+from bumblebee.drivers import bumbledriver
+
+# Disabling this because of a bug in printrun
+lib_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)) + os.sep + 'Printrun')
+sys.path.append(lib_path)
+
+from printrun import printcore
+from printrun import gcoder
 
 def scanPorts():
     try:
@@ -24,10 +33,13 @@ class printcoredriver(bumbledriver.bumbledriver):
     def __init__(self, config):
         super(printcoredriver, self).__init__(config)
         self.log = logging.getLogger('botqueue')
-        self.printThread = False
+        self.printThread = None
+        self.temperatures = {}
 
     def startPrint(self, jobfile):
         self.p = printcore.printcore()
+        self.p.tempcb = self._tempCallback
+        self.p.errorcb = self._errorCallback
         self.p.loud = False
         try:
             self.printing = True
@@ -35,7 +47,8 @@ class printcoredriver(bumbledriver.bumbledriver):
             while not self.isConnected():
                 time.sleep(1)
                 self.log.debug("Waiting for driver to connect.")
-            self.p.startprint(jobfile.localFile)
+            self.gcoder = gcoder.GCode(jobfile.localFile)
+            self.p.startprint(self.gcoder)
             self.printThread = Thread(target=self.printThreadEntry).start()
         except Exception as ex:
             self.log.error("Error starting print: %s" % ex)
@@ -47,18 +60,20 @@ class printcoredriver(bumbledriver.bumbledriver):
         while (self.p.printing):
             self.printing = self.p.printing
 
-            self.error = self.p.error
-            self.errorMessage = self.p.errorMessage
-            if self.error:
-                self.disconnect()
-                raise Exception(self.errorMessage)
-
             time.sleep(0.1)
         time.sleep(1)
         self.disconnect()
 
+    def _errorCallback(self,error):
+        self.errorMessage = error
+        self.disconnect()
+        raise Exception(self.errorMessage)
+
     def getPercentage(self):
-        return self.p.get_percentage()
+        if self.p.mainqueue is not None:
+            return float(self.p.queueindex) / float(len(self.p.mainqueue)) * 100
+        else:
+            return 0
 
     def pause(self):
         self.p.pause()
@@ -77,13 +92,34 @@ class printcoredriver(bumbledriver.bumbledriver):
 
     def stop(self):
         try:
-            self.p.stop()
+            self.p.cancelprint()
             self.disconnect()
         except AttributeError as ex:
             self.log.error(ex)
 
     def getTemperature(self):
-        return self.p.get_temperatures()
+        return self.temperatures
+
+    def _tempCallback(self, line):
+        #look for our extruder temp strings
+        matches = re.findall('T:([0-9]*\.?[0-9]+)', line)
+        if matches:
+            self.temperatures['extruder'] = matches[0]
+
+        matches = re.findall('T:([0-9]*\.?[0-9]+) /([0-9]*\.?[0-9]+)', line)
+        if matches:
+            self.temperatures['extruder'] = matches[0][0]
+            self.temperatures['extruder_target'] = matches[0][1]
+
+        # look for our bed temp strings
+        matches = re.findall('B:([0-9]*\.?[0-9]+)', line)
+        if matches:
+            self.temperatures['bed'] = matches[0]
+
+        matches = re.findall('B:([0-9]*\.?[0-9]+) /([0-9]*\.?[0-9]+)', line)
+        if matches:
+            self.temperatures['bed'] = matches[0][0]
+            self.temperatures['bed_target'] = matches[0][1]
 
     def connect(self):
         if not self.isConnected():
@@ -92,7 +128,7 @@ class printcoredriver(bumbledriver.bumbledriver):
 
     def disconnect(self):
         if self.isConnected():
-            if self.printThread:
+            if self.printThread is not None:
                 self.printThread.join(10)
             self.p.disconnect()
             super(printcoredriver, self).disconnect()
