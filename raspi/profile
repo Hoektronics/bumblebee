@@ -2,5 +2,6 @@
 #startup of botqueue on tty8
 if [ $(tty) = /dev/tty8 ]; then
     setterm -blank 0
-    screen -dR botqueue bumblebee
+    cd ~/Bumblebee/
+    screen -dR botqueue python -m bumblebee
 fi
