@@ -28,7 +28,6 @@ def __run_picture_command(command, log):
     # get any last lines of output
     output = p.stdout.readline()
     while output:
-        # log.debug("Webcam: %s" % output.strip())
         outputLog = outputLog + output
         output = p.stdout.readline()
 
@@ -38,7 +37,6 @@ def __run_picture_command(command, log):
         log.error("Webcam: %s" % error.strip())
         errorLog = errorLog + error
         error = p.stderr.readline()
-    # log.info("Webcam: capture complete.")
     # did we get errors?
     if (errorLog or p.returncode > 0):
         log.error("Errors detected.  Bailing.")
@@ -55,10 +53,12 @@ def takePicture(device, watermark=None, output="webcam.jpg", brightness=50, cont
             # what os are we using
             myos = hive.determineOS()
             if myos == "osx":
-                command = "./imagesnap -q -d '%s'-w 2.0 '%s' && " \
+                imagesnap = os.path.dirname(os.path.realpath(__file__)) + os.sep + "imagesnap"
+                command = "%s -q -d '%s' -w 2.0 '%s' && " \
                           "sips --resampleWidth 640" \
                           "--padToHeightWidth 480 640" \
                           "--padColor FFFFFF -s formatOptions 60%% '%s' 2>/dev/null" % (
+                              imagesnap,
                               device,
                               output,
                               output
