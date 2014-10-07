@@ -32,6 +32,9 @@ class BumbleBee():
     sleepTime = 0.5
 
     def __init__(self):
+        self.lastScanUpdate = 0
+        self.lastScreenUpdate = 0
+        self.lastBotUpdate = 0
         hive.loadLogger()
         self.log = logging.getLogger('botqueue')
         self.workers = {}
@@ -39,6 +42,7 @@ class BumbleBee():
         self.config = hive.config.get()
         self.lastScanData = None
         self.lastImageTime = time.time()
+        self.quit = False
 
         # check for default info.
         if 'app_url' not in self.config:
@@ -169,7 +173,23 @@ class BumbleBee():
         # load up our bots and start processing them.
         self.log.info("Started up, loading bot list.")
 
-        curses.wrapper(self.mainMenu)
+        if sys.stdout.isatty():
+            curses.wrapper(self.mainMenu)
+        else:
+            while not self.quit:
+                self.handleServerUpdates()
+                time.sleep(self.sleepTime)
+
+
+    def handleServerUpdates(self):
+        # any messages?
+        self.checkMessages()
+        if time.time() - self.lastBotUpdate > 10:
+            self.getBots()
+            self.lastBotUpdate = time.time()
+        if time.time() - self.lastScanUpdate > 60:
+            self.scanDevices()
+            self.lastScanUpdate = time.time()
 
     def mainMenu(self, screen):
         try:
@@ -183,11 +203,6 @@ class BumbleBee():
             except:
                 pass
 
-            # when did we last update?
-            lastBotUpdate = 0
-            lastScreenUpdate = 0
-            lastScanUpdate = 0
-
             # show an intro screen.
             self.screen.erase()
             self.screen.addstr(
@@ -195,20 +210,13 @@ class BumbleBee():
             self.screen.refresh()
 
             # our main loop until we're done.
-            self.quit = False
             while not self.quit:
 
-                # any messages?
-                self.checkMessages()
-                if (time.time() - lastBotUpdate > 10):
-                    self.getBots()
-                    lastBotUpdate = time.time()
-                if (time.time() - lastScreenUpdate > 1):
+                self.handleServerUpdates()
+
+                if time.time() - self.lastScreenUpdate > 1:
                     self.drawMenu()
-                    lastScreenUpdate = time.time()
-                if (time.time() - lastScanUpdate > 60):
-                    self.scanDevices()
-                    lastScanUpdate = time.time()
+                    self.lastScreenUpdate = time.time()
 
                 # keyboard interface stuff.
                 key = self.screen.getch()
@@ -230,18 +238,18 @@ class BumbleBee():
 
         # wait for all our threads to stop
         threads = len(self.workers)
-        lastUpdate = 0
+        self.lastUpdate = 0
         while threads > 0:
             for idx, link in self.workers.iteritems():
                 threads = 0
                 if link.process.is_alive():
                     threads = threads + 1
-            if time.time() - lastUpdate > 1:
+            if time.time() - self.lastUpdate > 1:
                 self.screen.erase()
                 self.screen.addstr("%s\n\n" % time.asctime())
                 self.screen.addstr("Waiting for worker threads to shut down (%d/%d)" % (threads, len(self.workers)))
                 self.screen.refresh()
-                lastUpdate = time.time()
+                self.lastUpdate = time.time()
 
         # stop our thread tracking.
         stacktracer.trace_stop()
