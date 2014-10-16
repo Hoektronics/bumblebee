@@ -23,7 +23,7 @@ class APITest():
             # jobs = self.api.createJobFromFile("test.stl")
             # self.printJobs(jobs)
 
-            bots = self.api.listBots()
+            bots = self.api.getMyBots()
             for bot in bots['data']:
                 print bot['driver_config']
 

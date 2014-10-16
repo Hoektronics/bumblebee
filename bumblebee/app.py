@@ -106,7 +106,7 @@ class BumbleBee():
 
         startTime = time.time()
         bots = self.api.getMyBots()
-        self.checkMessages()  # must come after listbots
+        self.checkMessages()  # must come after getMyBots
 
         # did we get a valid response?
         if bots:
