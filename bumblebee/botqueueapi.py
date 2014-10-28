@@ -2,6 +2,7 @@ import json
 import logging
 import socket
 import time
+import traceback
 
 from oauth_hook import OAuthHook
 import requests
@@ -73,6 +74,13 @@ class BotQueueAPI():
             parameters['_local_ip'] = self.localip
         parameters['api_call'] = call
         parameters['api_output'] = 'json'
+
+        # Format any weird objects to strings
+        for key, value in parameters.iteritems():
+            #self.log.debug("%s -> %s" % (key, value))
+            if isinstance(value, Exception):
+                self.log.debug("Format of %s" % key)
+                parameters[key] = traceback.format_exc(value)
 
         # make the call for as long as it takes.
         while retries > 0:
