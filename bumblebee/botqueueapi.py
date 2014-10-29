@@ -77,9 +77,7 @@ class BotQueueAPI():
 
         # Format any weird objects to strings
         for key, value in parameters.iteritems():
-            #self.log.debug("%s -> %s" % (key, value))
             if isinstance(value, Exception):
-                self.log.debug("Format of %s" % key)
                 parameters[key] = traceback.format_exc(value)
 
         # make the call for as long as it takes.
@@ -106,6 +104,12 @@ class BotQueueAPI():
                 request = requests.Request('POST', url, data=parameters, files=files)
                 request = self.my_oauth_hook(request)
                 response = self.session.send(request.prepare(), timeout=600)
+
+                if response.status_code == 414:
+                    for key, value in parameters.iteritems():
+                        self.log.debug("%s: %d" % (key, len(value)))
+                    raise ServerError("Request was too long for this server.")
+                # convert it to json
                 result = response.json()
 
                 # sweet, our request must have gone through.
@@ -136,9 +140,13 @@ class BotQueueAPI():
                 self.log.error(ex)
                 self.authorize()
             # these are our known errors that typically mean the network is down.
-            except (requests.ConnectionError, requests.Timeout, ServerError) as ex:
+            except (requests.ConnectionError, requests.Timeout) as ex:
                 # raise NetworkError(str(ex))
                 self.log.error("%s call failed: internet connection is down: %s" % (call, ex))
+                self.netError()
+                retries = retries - 1
+            except ServerError as ex:
+                self.log.error("%s call failed: %s" % (call, ex))
                 self.netError()
                 retries = retries - 1
             # unknown exceptions... get a stacktrace for debugging.
@@ -309,6 +317,9 @@ class BotQueueAPI():
         return self.apiCall('updatebot', data)
 
     def updateSliceJob(self, job_id=0, status="", output="", errors="", filename=""):
+        if len(output) > 7000:
+            output = "Note: Output has been truncated by BotQueue:\n%s" % output[:7000]
+            output = output[:output.rfind('\n')]
         return self.apiCall('updateslicejob', {'job_id': job_id, 'status': status, 'output': output, 'errors': errors},
                             filepath=filename)
 
