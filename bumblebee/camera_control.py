@@ -101,6 +101,7 @@ def takePicture(device, watermark=None, output="webcam.jpg", brightness=50, cont
 
 def __scanCameraRaspi(cameras):
     __scanCameraLinux(cameras)
+    return
 
     try:
         import picamera
@@ -149,7 +150,7 @@ def scanCameras():
             __scanCamerasOSX(cameras)
         elif myos == "linux":
             __scanCameraLinux(cameras)
-        #elif myos == "raspberrypi":
-            #__scanCameraRaspi(cameras)
+        elif myos == "raspberrypi":
+            __scanCameraRaspi(cameras)
 
     return cameras
