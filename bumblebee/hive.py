@@ -1,6 +1,7 @@
 import hashlib
 import json
 import logging
+import logging.handlers
 import os
 import pprint
 import shutil
@@ -80,7 +81,7 @@ class URLFile():
                 else:
                     self.cacheHit = True
                     self.localSize = os.path.getsize(self.localPath)
-                    self.localFile = open(self.localPath, "r")
+                    self.localFile = open(self.localPath, "rb")
                     self.progress = 100
             #  okay, should we open it for writing?
             if not os.path.exists(self.localPath):
@@ -222,8 +223,8 @@ def loadLogger():
     # create formatter and add it to the handlers
     formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
 
-    # create file handler which logs even debug messages
-    fh = logging.FileHandler('info.log')
+    # create file handler which logs even debug messages (max 25mb)
+    fh = logging.handlers.RotatingFileHandler('info.log', maxBytes=26214400, backupCount = 3)
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(formatter)
     logger.addHandler(fh)
