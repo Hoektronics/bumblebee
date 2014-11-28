@@ -1,121 +1,126 @@
-import os, sys
-import bumbledriver
 import logging
+import os
+import struct
+import sys
 import time
-from threading import Thread, Lock
-import re
 
-# goddamn ugly makerbot code.
-lib_path = os.path.abspath('./drivers')
+from bumblebee.drivers import bumbledriver
+from threading import Thread, Condition
+
+lib_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)) + os.sep + 's3g')
+if not os.path.exists(lib_path):
+    # Download s3g using git
+    from subprocess import call, STDOUT
+    FNULL = open(os.devnull, 'w')
+    call(['git', 'clone', 'https://github.com/makerbot/s3g', lib_path], stdout=FNULL, stderr=STDOUT)
 sys.path.append(lib_path)
 
-#this has to come after the above code
-import makerbot_driver
-import serial
+# this has to come after the above code
+try:
+    import makerbot_driver
+    import serial
+except Exception as ex:
+    raise Exception("Please use Makerbot's version of pyserial")
 
 
 class s3gdriver(bumbledriver.bumbledriver):
     def __init__(self, config):
         super(s3gdriver, self).__init__(config)
 
+        self.currentProgress = 0
+        self.totalPayloads = 1
         self.log = logging.getLogger('botqueue')
-        self.progressLock = Lock()
-        self.s3g = False
+        self.s3g = None
+        self.printThread = None
+        self.temperature = None
 
     def startPrint(self, jobfile):
         try:
             self.jobfile = jobfile
-            #parser.state.values["build_name"] = jobfile.localFile.localPath[:15]
-            self.parser.state.values["build_name"] = "BOTQUEUE!"
             self.printing = True
             self.connect()
             while not self.isConnected():
                 time.sleep(1)
                 self.log.debug("Waiting for driver to connect.")
-            Thread(target=self.printThreadEntry).start()
+            self.printThread = Thread(target=self.printThreadEntry).start()
         except Exception as ex:
             self.log.error("Error starting print: %s" % ex)
+            self.disconnect()
             raise ex
 
-    #this doesn't do much, just a thread to watch our thread indirectly.
     def executeFile(self):
+        self.s3g.init()
 
-        with self.progressLock:
-            self.currentPosition = 0
+        self.s3g.build_start_notification("BotQueue!")
 
-        #turn our leds on white
-        self.s3g.set_RGB_LED(255, 255, 255, 0);
+        reader = makerbot_driver.FileReader.FileReader()
+        reader.file = self.jobfile.localFile
+        payloads = reader.ReadFile()
 
-        # our start gcode
-        # if self.start_gcode:
-        #   for line in self.start_gcode:
-        #     self.parser.execute_line(line)
+        self.currentProgress = 0
+        self.totalPayloads = len(payloads)
+        temperatureCount = 0
 
-        #load our file into memory.
-        lines = []
-        while 1:
-            line = self.jobfile.localFile.readline()
-            if not line:
-                break
-            lines.append(line)
+        while self.currentProgress < self.totalPayloads and self.printing:
+            payload = self.convertPayload(payloads[self.currentProgress])
+            temperatureCount += 1
+            try:
+                if temperatureCount == 10:
+                    self.temperature = self.s3g.get_toolhead_temperature(0)
+                    temperatureCount = 0
+                self.s3g.writer.send_command(payload)
+                self.currentProgress += 1
+            except makerbot_driver.BufferOverflowError as ex:
+                time.sleep(.5)
 
-        comment = re.compile('(;.*)')
-        comment2 = re.compile('(\(.*\))')
+        # Wait for the print to finish
+        while not self.s3g.is_finished():
+            time.sleep(1)
 
-        #create new lines
-        lines = self.sp.process_gcode(lines)
-        for line in lines:
-            line = comment.sub('', line)
-            line = comment2.sub('', line)
-            line = line.rstrip()
-            if line:
-                self.log.debug(line)
-                try:
-                    self.parser.execute_line(line)
-                except Exception as ex:
-                    self.log.debug(ex)
+        self.s3g.build_end_notification()
 
-            #with self.progressLock:
-            self.currentPosition = self.currentPosition + len(line)
-
-            #our end gcode
-            # if self.end_gcode:
-            #   for line in self.end_gcode:
-            #     self.parser.execute_line(line)
+    def convertPayload(self, payload):
+        cmd, payload = payload[0], payload[1:]
+        cmdFormat = makerbot_driver.FileReader.hostFormats[cmd]
+        structFormats = makerbot_driver.FileReader.structFormats
+        result = []
+        for fmt, data in zip(cmdFormat, payload):
+            if(fmt == 'B'):
+                result.append(data)
+                continue
+            if fmt == 's':
+                fmt = str(len(data)) + "s"
+                newFormat = "<" + str(len(data)) + "B"
+            else:
+                newFormat = "<" + str(structFormats[fmt]) + "B"
+            result.extend(struct.unpack(newFormat, struct.pack(fmt, data)))
+        return result
 
     def getPercentage(self):
-        with self.progressLock:
-            return float(self.currentPosition) / float(self.jobfile.localSize) * 100
+        return float(self.currentProgress) / float(self.totalPayloads) * 100
 
     def connect(self):
         if not self.isConnected():
-            #load our config and connect.
-            factory = makerbot_driver.MachineFactory()
-
             try:
-                obj = factory.build_from_port(self.config['port'])
-                self.s3g = obj.s3g
+                self.s3g = makerbot_driver.s3g.from_filename(
+                    port=self.config['port'],
+                    baudrate=self.config['baud'],
+                    condition=Condition()
+                )
 
-                #create our start and end sequences.
-                self.assembler = makerbot_driver.GcodeAssembler(getattr(obj, 'profile'))
-                start, end, variables = self.assembler.assemble_recipe()
-                #self.start_gcode = self.assembler.assemble_start_sequence(start)
-                #self.end_gcode = self.assembler.assemble_end_sequence(end)
-                self.log.debug(self.assembler.assemble_start_sequence(start))
-                self.assembler.assemble_end_sequence(end)
-
-                #extra crap for parsing gcode.
-                self.sp = makerbot_driver.GcodeProcessors.SlicerProcessor()
-                self.parser = getattr(obj, 'gcodeparser')
-                self.parser.environment.update(variables)
                 super(s3gdriver, self).connect()
 
             except serial.SerialException as ex:
-                self.s3g = False
+                self.s3g = None
                 raise Exception(ex.message)
 
+    def getTemperature(self):
+        if self.temperature is not None:
+            return {'extruder': self.temperature}
+        return None
+
     def isConnected(self):
-        if self.s3g:
+        if self.s3g is not None:
             return self.s3g.is_open()
         else:
             return False
@@ -123,4 +128,29 @@ class s3gdriver(bumbledriver.bumbledriver):
     def disconnect(self):
         if self.isConnected():
             self.s3g.close()
+            self.s3g = None
             super(s3gdriver, self).disconnect()
+
+    def pause(self):
+        if self.isConnected():
+            self.s3g.pause()
+            super(s3gdriver, self).pause()
+
+    def resume(self):
+        if self.isConnected():
+            # Pause resumes if it's already paused
+            self.s3g.pause()
+            super(s3gdriver, self).resume()
+
+    def stop(self):
+        self.printing = False
+        if self.isConnected():
+            # Sleep so no knew commands are sent
+            time.sleep(1)
+            self.s3g.abort_immediately()
+            super(s3gdriver, self).stop()
+
+    def reset(self):
+        if self.isConnected():
+            self.s3g.reset()
+            super(s3gdriver, self).reset()
