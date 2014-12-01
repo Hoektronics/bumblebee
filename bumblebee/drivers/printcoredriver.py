@@ -44,8 +44,16 @@ class printcoredriver(bumbledriver.bumbledriver):
         try:
             self.printing = True
             self.connect()
+            connectCount = 0
             while not self.isConnected():
+                connectCount += 1
                 time.sleep(1)
+                if connectCount == 5:
+                    self.log.debug("Trying to reset port")
+                    self.p.printer.baudrate = 9600
+                    self.p.printer.baudrate = self.config['baud']
+                if connectCount == 20:
+                    raise Exception("Could not connect to bot")
                 self.log.debug("Waiting for driver to connect.")
             self.gcoder = gcoder.GCode(jobfile.localFile)
             self.p.startprint(self.gcoder)
