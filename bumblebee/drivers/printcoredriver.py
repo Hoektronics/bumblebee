@@ -7,7 +7,6 @@ import re
 
 from bumblebee.drivers import bumbledriver
 
-# Disabling this because of a bug in printrun
 lib_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)) + os.sep + 'Printrun')
 sys.path.append(lib_path)
 
