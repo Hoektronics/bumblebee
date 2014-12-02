@@ -2,12 +2,26 @@ import time
 import logging
 import os
 import sys
-from threading import Thread
 import re
 
+from subprocess import call, check_output, STDOUT
+from threading import Thread
 from bumblebee.drivers import bumbledriver
 
 lib_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)) + os.sep + 'Printrun')
+
+# Remove the previous submodule
+if os.path.exists(lib_path):
+    FNULL = open(os.devnull, 'w')
+    head = check_output(['git', 'rev-parse', 'HEAD'], stdout=FNULL, stderr=STDOUT)
+    if head.strip() == '2fef8654fa73b61eba80d8524ceb620fa41e3b60':
+        self.log.debug("Removing old Printrun")
+        call(['rm', '-rf', lib_path], stdout=FNULL, stderr=STDOUT)
+
+if not os.path.exists(lib_path):
+    # Download printrun using git
+    FNULL = open(os.devnull, 'w')
+    call(['git', 'clone', 'https://github.com/kliment/printrun', lib_path], stdout=FNULL, stderr=STDOUT)
 sys.path.append(lib_path)
 
 from printrun import printcore
