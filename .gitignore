@@ -6,6 +6,7 @@ cache*
 engines*
 *.jpg
 *.log
+*.log.*
 *.html
 build/
 dist/
