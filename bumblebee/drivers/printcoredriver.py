@@ -1,32 +1,23 @@
 import time
 import logging
 import os
+import shutil
 import sys
 import re
 
 from subprocess import call, check_output, STDOUT
 from threading import Thread
+
+from bumblebee import hive
 from bumblebee.drivers import bumbledriver
 
-lib_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)) + os.sep + 'Printrun')
+old_lib_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)) + os.sep + 'Printrun')
 
 # Remove the previous submodule
-log = logging.getLogger('botqueue')
-if os.path.exists(lib_path):
-    FNULL = open(os.devnull, 'w')
-    head = check_output(['git', 'rev-parse', 'HEAD'], stderr=STDOUT, cwd=lib_path)
-    log.debug(head.strip())
-    if head.strip() == '2fef8654fa73b61eba80d8524ceb620fa41e3b60':
-        log.debug("Removing old Printrun")
-        call(['rm', '-rf', lib_path], stdout=FNULL, stderr=STDOUT)
-        log.debug("Done removing old Printrun")
+if os.path.exists(old_lib_path):
+    shutil.rmtree(old_lib_path)
 
-if not os.path.exists(lib_path):
-    # Download printrun using git
-    log.debug("Downloading Printrun")
-    FNULL = open(os.devnull, 'w')
-    call(['git', 'clone', 'https://github.com/kliment/printrun', lib_path], stdout=FNULL, stderr=STDOUT)
-    log.deubg("Printrun download completed")
+lib_path = hive.getEngine('Printrun', type="driver", repo="https://github.com/kliment/Printrun")
 sys.path.append(lib_path)
 
 from printrun import printcore

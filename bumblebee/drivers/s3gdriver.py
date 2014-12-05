@@ -1,18 +1,19 @@
 import logging
 import os
+import shutil
 import struct
 import sys
 import time
 
+from bumblebee import hive
 from bumblebee.drivers import bumbledriver
 from threading import Thread, Condition
 
-lib_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)) + os.sep + 's3g')
-if not os.path.exists(lib_path):
-    # Download s3g using git
-    from subprocess import call, STDOUT
-    FNULL = open(os.devnull, 'w')
-    call(['git', 'clone', 'https://github.com/makerbot/s3g', lib_path], stdout=FNULL, stderr=STDOUT)
+old_lib_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)) + os.sep + 's3g')
+if os.path.exists(old_lib_path):
+    shutil.rmtree(old_lib_path)
+
+lib_path = hive.getEngine('s3g', type="driver", repo="https://github.com/makerbot/s3g")
 sys.path.append(lib_path)
 
 # this has to come after the above code

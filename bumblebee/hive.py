@@ -235,6 +235,27 @@ def loadLogger():
     #  ch.setFormatter(formatter)
     #  logger.addHandler(ch)
 
+def getEngine(engine_name,
+            type=None,
+            repo=None):
+    log = logging.getLogger('botqueue')
+    
+    engines = os.path.dirname(os.path.realpath(__file__))
+    engines = engines + os.sep + "engines" + os.sep + type
+    if not os.path.exists(os.path.abspath(engines)):
+        os.makedirs(os.path.abspath(engines))
+    engine_path = engines + os.sep + engine_name
+    engine_path = os.path.abspath(engine_path)
+
+    if os.path.exists(engine_path):
+        return engine_path
+
+    log.info("Downloading %s from %s to %s" % (engine_name, repo, engine_path))
+    from subprocess import call
+    log_stream = open(os.devnull, 'w')
+    call(['git', 'clone', repo, engine_path], stdout=log_stream, stderr=log_stream)
+    log.info("Downloading %s finished" % engine_name)
+    return engine_path
 
 config = BeeConfig()
 debug = pprint.PrettyPrinter(indent=4)
