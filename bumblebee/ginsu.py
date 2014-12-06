@@ -2,14 +2,13 @@ import json
 import logging
 import os
 import re
+import shutil
 import signal
 import stat
 import subprocess
 import tempfile
 from threading import Thread, RLock
 import time
-import urllib2
-import tarfile
 
 from bumblebee import hive
 
@@ -46,11 +45,19 @@ class Ginsu():
         return self.sliceResult
 
     def slicerFactory(self):
-        mySlic3r = Slic3r(self.sliceJob['slice_config'], self.sliceFile)
+        slice_config = self.sliceJob['slice_config']
+        # todo: Make sure the engine exists
+        slicer_name = slice_config['engine']['path']
+        slicer = None
+        if slicer_name.startswith('slic3r'):
+            slicer = Slic3r(slice_config, self.sliceFile)
+        elif slicer_name.startswith('cura'):
+            slicer = Cura(slice_config, self.sliceFile)
+
         # getSlicerPath is called to verify the engine exists and
         # is available for this OS
-        mySlic3r.getSlicerPath()
-        return mySlic3r
+        slicer.getSlicerPath()
+        return slicer
 
     def slice(self):
         self.log.info("Starting slice.")
@@ -70,6 +77,7 @@ class GenericSlicer(object):
         self.sliceFile = slicefile
         self.progress = 0
         self.running = True
+        self.name = "GenericSlicer"
 
         self.prepareFiles()
 
@@ -89,51 +97,50 @@ class GenericSlicer(object):
     def getProgress(self):
         return self.progress
 
+class CommandLineSlicer(GenericSlicer):
+    def __init__(self, config, slice_file):
+        super(CommandLineSlicer, self).__init__(config, slice_file)
+        self.name = "CommandLineSlicer"
+
     def getSlicerPath(self):
-        pass
+        # Have we already figured out where we are?
+        if self.slicePath and os.path.exists(self.slicePath):
+            return self.slicePath
 
+        my_os = hive.determineOS()
+        if my_os == "unknown":
+            raise Exception("This engine is not supported on your OS.")
 
-class Slic3r(GenericSlicer):
-    def __init__(self, config, slicefile):
-        super(Slic3r, self).__init__(config, slicefile)
-        self.slicePath = False
+        # figure out where our path is.
+        realPath = os.path.dirname(os.path.realpath(__file__))
+        engine_type = self.config['engine']['type']
+        engine_path = self.config['engine']['path']
+        sliceEnginePath = "%s/engines/%s/%s" % (realPath, engine_type, engine_path)
+        if not os.path.exists(sliceEnginePath):
+            with Ginsu.downloadLock:
+                self.slicePath = hive.downloadSlicer(engine_path, engine_type, sliceEnginePath)
+                if self.slicePath is None:
+                    raise Exception("The requested engine can't be installed.")
+                else:
+                    # Change permissions
+                    st = os.stat(self.slicePath)
+                    os.chmod(self.slicePath, st.st_mode | stat.S_IEXEC)
+        else:
+            user = 'Hoektronics'
+            repo = 'engines'
+            url = "https://raw.github.com/%s/%s/%s-%s/manifest.json" % (user, repo, my_os, engine_path)
+            manifestFile = "%s-%s-manifest.json"
+            hive.download(url, manifestFile)
+            manifest = json.load(open(manifestFile, 'r'))
+            os.remove(manifestFile)
+            dirName = manifest['directory']
+            self.slicePath = "%s/%s/%s" % (sliceEnginePath, dirName, manifest['path'])
+            if not (os.path.exists(self.slicePath)):
+                self.log.debug("Cleaning up bad installation")
+                shutil.rmtree(sliceEnginePath)
+                return self.getSlicerPath()
 
-        self.p = False
-
-        # our regexes
-        self.reg05 = re.compile('Processing input file')
-        self.reg10 = re.compile('Processing triangulated mesh')
-        self.reg20 = re.compile('Generating perimeters')
-        self.reg30 = re.compile('Detecting solid surfaces')
-        self.reg40 = re.compile('Preparing infill surfaces')
-        self.reg50 = re.compile('Detect bridges')
-        self.reg60 = re.compile('Generating horizontal shells')
-        self.reg70 = re.compile('Combining infill')
-        self.reg80 = re.compile('Infilling layers')
-        self.reg90 = re.compile('Generating skirt')
-        self.reg100 = re.compile('Exporting G-code to')
-
-    def stop(self):
-        self.log.debug("Slic3r slicer stopped.")
-        if self.p:
-            try:
-                self.log.info("Killing slic3r process.")
-                # self.p.terminate()
-                os.kill(self.p.pid, signal.SIGTERM)
-                t = 5  # max wait time in secs
-                while self.p.poll() < 0:
-                    if t > 0.5:
-                        t -= 0.25
-                        time.sleep(0.25)
-                    else:  # still there, force kill
-                        os.kill(self.p.pid, signal.SIGKILL)
-                        time.sleep(0.5)
-                self.p.poll()  # final try
-            except OSError:
-                # self.log.info("Kill exception: %s" % ex)
-                pass  # successfully killed process
-            self.log.info("Slicer killed.")
-        self.running = False
+        return self.slicePath
 
     def prepareFiles(self):
         self.configFile = tempfile.NamedTemporaryFile(delete=False)
@@ -144,136 +151,9 @@ class Slic3r(GenericSlicer):
         self.outFile = tempfile.NamedTemporaryFile(delete=False)
         self.log.debug("Output file: %s" % self.outFile.name)
 
-    def getSlicerPath(self):
-        # Have we already figured out where we are?
-        if self.slicePath and os.path.exists(self.slicePath):
-            return self.slicePath
-        # figure out where our path is.
-        myos = hive.determineOS()
-        if myos == "unknown":
-            raise Exception("This engine is not supported on your OS.")
-
-        realPath = os.path.dirname(os.path.realpath(__file__))
-        sliceEnginePath = "%s/engines/%s/%s" % (realPath, self.config['engine']['type'], self.config['engine']['path'])
-        if not os.path.exists(sliceEnginePath):
-            with Ginsu.downloadLock:
-                if not self.downloadSlicer(myos, self.config['engine'], sliceEnginePath):
-                    raise Exception("The requested engine can't be installed.")
-                else:
-                    # Change permissions
-                    st = os.stat(self.slicePath)
-                    os.chmod(self.slicePath, st.st_mode | stat.S_IEXEC)
-        else:
-            user = 'Hoektronics'
-            repo = 'engines'
-            url = "https://raw.github.com/%s/%s/%s-%s/manifest.json" % (user, repo, myos, self.config['engine']['path'])
-            manifestFile = "%s-%s-manifest.json"
-            self.download(url, manifestFile)
-            manifest = json.load(open(manifestFile, 'r'))
-            os.remove(manifestFile)
-            dirName = manifest['directory']
-            self.slicePath = "%s/%s/%s" % (sliceEnginePath, dirName, manifest['path'])
-            if not (os.path.exists(self.slicePath)):
-                self.log.debug("Cleaning up bad installation")
-                # todo Have it clean out any files in the folder first
-                os.rmdir(sliceEnginePath)
-                return self.getSlicerPath()
-
-        return self.slicePath
-
-    def downloadSlicer(self, myos, engine, installPath):
+    def run_process(self, command, output_file, cwd, output_callback):
         try:
-            # Is it already installed?
-            if not os.path.exists(installPath):
-                enginePath = engine['path']
-                user = 'Hoektronics'
-                repo = 'engines'
-                url = "https://github.com/%s/%s/archive/%s-%s.tar.gz" % (user, repo, myos, enginePath)
-                self.log.info("Downloading %s from %s" % (enginePath, url))
-                tarName = "%s-%s-%s" % (repo, myos, enginePath)
-                self.log.info("Extracting to %s" % (installPath))
-                if not os.path.exists(installPath):
-                    os.makedirs(installPath)
-
-                tarFileName = "%s.tar.gz" % tarName
-                self.download(url, tarFileName)
-
-                myTarFile = tarfile.open(name=tarFileName)
-                myTarFile.extractall(path=installPath)
-                myTarFile.close()
-                self.log.debug("Reading manifest")
-                manifestFile = "%s/%s/manifest.json" % (installPath, tarName)
-                manifest = json.load(open(manifestFile, 'r'))
-                os.remove(manifestFile)
-                dirName = manifest['directory']
-                self.slicePath = "%s/%s/%s" % (installPath, dirName, manifest['path'])
-
-                if (manifest['category'] != engine['type']):
-                    raise Exception(
-                        "%s was type %s not the expected %s" % (enginePath, manifest['category'], engine['type']))
-                os.renames("%s/%s" % (installPath, tarName), "%s/%s" % (installPath, dirName))
-
-                # Double check everything was installed
-                if not os.path.exists(self.slicePath):
-                    raise Exception("Something went wrong during installation")
-
-                self.log.info("%s installed" % enginePath)
-
-        except Exception as ex:
-            self.log.debug(ex)
-            return False
-        finally:
-            os.remove(tarFileName)
-        return True
-
-    def download(self, url, localFileName):
-        localFile = open(localFileName, 'wb')
-        request = urllib2.Request(url)
-        urlFile = urllib2.urlopen(request)
-        chunk = 4096
-
-        while 1:
-            data = urlFile.read(chunk)
-            if not data:
-                break
-            localFile.write(data)
-        localFile.close()
-
-    def checkProgress(self, line):
-        if self.reg05.search(line):
-            self.progress = 5
-        elif self.reg10.search(line):
-            self.progress = 10
-        elif self.reg20.search(line):
-            self.progress = 20
-        elif self.reg30.search(line):
-            self.progress = 30
-        elif self.reg40.search(line):
-            self.progress = 40
-        elif self.reg50.search(line):
-            self.progress = 50
-        elif self.reg60.search(line):
-            self.progress = 60
-        elif self.reg70.search(line):
-            self.progress = 70
-        elif self.reg80.search(line):
-            self.progress = 80
-        elif self.reg90.search(line):
-            self.progress = 90
-        elif self.reg100.search(line):
-            self.progress = 100
-
-    def slice(self):
-        # create our command to do the slicing
-        myos = hive.determineOS()
-        try:
-            command = "%s --load %s --output %s %s" % (
-                self.getSlicerPath(),
-                self.configFile.name,
-                self.outFile.name,
-                self.sliceFile.localPath
-            )
-            if (myos != "win"):
+            if hive.determineOS() != "win":
                 command = "exec " + command
             self.log.info("Slice Command: %s" % command)
 
@@ -281,20 +161,19 @@ class Slic3r(GenericSlicer):
             errorLog = ""
 
             # this starts our thread to slice the model into gcode
-            self.p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-            self.log.info("Slic3r started.")
+            self.p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, cwd=cwd)
+            self.log.info("%s started." % self.name)
             while self.p.poll() is None:
                 output = self.p.stdout.readline()
                 if output:
-                    self.log.info("Slic3r: %s" % output.strip())
+                    self.log.info("%s: %s" % (self.name, output.strip()))
                     outputLog = outputLog + output
-                    self.checkProgress(output)
+                    output_callback(output)
 
                 time.sleep(0.1)
 
                 # did we get cancelled?
                 if not self.running:
-                    self.log.info("Killing slic3r process.")
                     self.p.terminate()
                     self.p.kill()
                     return
@@ -310,15 +189,15 @@ class Slic3r(GenericSlicer):
             # get any last lines of output
             output = self.p.stdout.readline()
             while output:
-                self.log.debug("Slic3r: %s" % output.strip())
+                self.log.debug("%s: %s" % (self.name, output.strip()))
                 outputLog = outputLog + output
-                self.checkProgress(output)
+                output_callback(output)
                 output = self.p.stdout.readline()
 
             # get our errors (if any)
             error = self.p.stderr.readline()
             while error:
-                self.log.error("Slic3r: %s" % error.strip())
+                self.log.error("%s: %s" % (self.name, error.strip()))
                 errorLog = errorLog + error
                 error = self.p.stderr.readline()
 
@@ -327,7 +206,7 @@ class Slic3r(GenericSlicer):
 
             # save all our results to an object
             sushi = hive.Object
-            sushi.output_file = self.outFile.name
+            sushi.output_file = output_file.name
             sushi.output_log = outputLog
             sushi.error_log = errorLog
 
@@ -347,3 +226,103 @@ class Slic3r(GenericSlicer):
             return sushi
         except Exception as ex:
             self.log.exception(ex)
+
+    def kill(self, process):
+        self.log.debug("%s slicer stopped." % self.name)
+        if process is not None:
+            try:
+                self.log.info("Killing %s process." % self.name)
+                # self.p.terminate()
+                os.kill(process.pid, signal.SIGTERM)
+                t = 5  # max wait time in secs
+                while process.poll() < 0:
+                    if t > 0.5:
+                        t -= 0.25
+                        time.sleep(0.25)
+                    else:  # still there, force kill
+                        os.kill(process.pid, signal.SIGKILL)
+                        time.sleep(0.5)
+                process.poll()  # final try
+            except OSError:
+                # self.log.info("Kill exception: %s" % ex)
+                pass  # successfully killed process
+            self.log.info("Slicer killed.")
+        self.running = False
+
+
+class Cura(CommandLineSlicer):
+    def __init__(self, config, slice_file):
+        super(Cura, self).__init__(config, slice_file)
+        self.name = "Cura"
+        self.slicePath = None
+
+        self.p = None
+
+    def stop(self):
+        self.kill(self.p)
+
+    def checkProgress(self, line):
+        self.log.debug(line)
+        if not self.running:
+            self.progress = 100
+        else:
+            self.progress = 0
+
+    def slice(self):
+        slicer_path = self.getSlicerPath()
+        # create our command to do the slicing
+        command = "%s -i %s -o %s -s %s" % (
+            slicer_path,
+            self.configFile.name,
+            self.outFile.name,
+            self.sliceFile.localPath
+        )
+
+        cwd = os.path.dirname(slicer_path)
+
+        return self.run_process(command, self.outFile, cwd, self.checkProgress)
+
+
+class Slic3r(CommandLineSlicer):
+    def __init__(self, config, slice_file):
+        super(Slic3r, self).__init__(config, slice_file)
+        self.name = "Slic3r"
+        self.slicePath = None
+
+        self.p = None
+
+        # our regexes
+        self.regex = {         
+            re.compile('Processing input file'): 5,
+            re.compile('Processing triangulated mesh'): 10,
+            re.compile('Generating perimeters'): 20,
+            re.compile('Detecting solid surfaces'): 30,
+            re.compile('Preparing infill surfaces'): 40,
+            re.compile('Detect bridges'): 50,
+            re.compile('Generating horizontal shells'): 60,
+            re.compile('Combining infill'): 70,
+            re.compile('Infilling layers'): 80,
+            re.compile('Generating skirt'): 90,
+            re.compile('Exporting G-code to'): 100
+        }
+
+    def stop(self):
+        self.kill(self.p)
+
+    def checkProgress(self, line):
+        for key, value in self.regex.iteritems():
+            if key.search(line):
+                self.progress = value
+
+    def slice(self):
+        slicer_path = self.getSlicerPath()
+        # create our command to do the slicing
+        command = "%s --load %s --output %s %s" % (
+            slicer_path,
+            self.configFile.name,
+            self.outFile.name,
+            self.sliceFile.localPath
+        )
+        cwd = os.path.dirname(slicer_path)
+
+        return self.run_process(command, self.outFile, cwd, self.checkProgress)

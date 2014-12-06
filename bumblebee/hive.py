@@ -6,6 +6,7 @@ import os
 import pprint
 import shutil
 import sys
+import tarfile
 import tempfile
 from threading import Thread
 import time
@@ -256,6 +257,70 @@ def getEngine(engine_name,
     call(['git', 'clone', repo, engine_path], stdout=log_stream, stderr=log_stream)
     log.info("Downloading %s finished" % engine_name)
     return engine_path
+
+def downloadSlicer(engine_path, engine_type, installPath):
+    myos = determineOS()
+    log = logging.getLogger('botqueue')
+    tarFileName = None
+
+    try:
+        # Is it already installed?
+        if not os.path.exists(installPath):
+            user = 'Hoektronics'
+            repo = 'engines'
+            url = "https://github.com/%s/%s/archive/%s-%s.tar.gz" % (user, repo, myos, engine_path)
+            log.info("Downloading %s from %s" % (engine_path, url))
+            tarName = "%s-%s-%s" % (repo, myos, engine_path)
+            log.info("Extracting to %s" % (installPath))
+            if not os.path.exists(installPath):
+                os.makedirs(installPath)
+
+            tarFileName = "%s.tar.gz" % tarName
+            download(url, tarFileName)
+
+            myTarFile = tarfile.open(name=tarFileName)
+            myTarFile.extractall(path=installPath)
+            myTarFile.close()
+            log.debug("Reading manifest")
+            manifestFile = "%s/%s/manifest.json" % (installPath, tarName)
+            manifest = json.load(open(manifestFile, 'r'))
+            os.remove(manifestFile)
+            dirName = manifest['directory']
+            slicePath = "%s/%s/%s" % (installPath, dirName, manifest['path'])
+
+            if (manifest['category'] != engine_type):
+                raise Exception(
+                    "%s was type %s not the expected %s" % (engine_path, manifest['category'], engine_type))
+            os.renames("%s/%s" % (installPath, tarName), "%s/%s" % (installPath, dirName))
+
+            log.debug(slicePath)
+            # Double check everything was installed
+            if not os.path.exists(slicePath):
+                raise Exception("Something went wrong during installation")
+
+            log.info("%s installed" % engine_path)
+
+            return slicePath
+
+    except Exception as ex:
+        log.debug(ex)
+        return None
+    finally:
+        if tarFileName is not None:
+            os.remove(tarFileName)
+
+def download(url, localFileName):
+    localFile = open(localFileName, 'wb')
+    request = urllib2.Request(url)
+    urlFile = urllib2.urlopen(request)
+    chunk = 4096
+
+    while 1:
+        data = urlFile.read(chunk)
+        if not data:
+            break
+        localFile.write(data)
+    localFile.close()
 
 config = BeeConfig()
 debug = pprint.PrettyPrinter(indent=4)
