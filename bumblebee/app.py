@@ -15,7 +15,7 @@ from bumblebee import stacktracer
 from bumblebee import workerbee
 
 try:
-    from autoupgrade import AutoUpgrade
+    from bumblebee import autoupgrade
     auto_update = True
 except ImportError:
     auto_update = False
@@ -29,7 +29,7 @@ class BumbleBee():
 
     def __init__(self):
         if auto_update:
-            self.app = AutoUpgrade("bqclient")
+            self.app = autoupgrade.AutoUpgrade("bqclient", "https://pypi.python.org/simple")
         else:
             self.app = None
         self.lastScanUpdate = 0

@@ -14,7 +14,7 @@ URL = "http://github.com/Hoektronics/bumblebee/"
 PACKAGES = ["bumblebee", "bumblebee.drivers"]
 PKG_DATA = {"bumblebee":["config-dist.json","imagesnap"]}
 DEPENDS = ["git://github.com/makerbot/pyserial#egg=pyserial"]
-REQUIRES = ["Pygments", "pyserial", "requests-oauth", "autoupgrade"]
+REQUIRES = ["Pygments", "pyserial", "requests-oauth", "beautifulsoup4"]
 EXCLUDES = ["pydoc"]
 
 setup(name=NAME,
