@@ -20,6 +20,8 @@ if os.path.exists(old_lib_path):
 lib_path = hive.getEngine('Printrun', type="driver", repo="https://github.com/kliment/Printrun")
 sys.path.append(lib_path)
 
+# Kill the error output because of warnings from printrun
+sys.stderr = open(os.devnull, 'w')
 from printrun import printcore
 from printrun import gcoder
 

@@ -19,6 +19,7 @@ class BeeConfig():
     def __init__(self):
         self.data = []
         self.loaded = False
+        self.path = os.path.dirname(os.path.realpath(__file__)) + os.sep + "config.json"
 
     def get(self):
         if not self.loaded:
@@ -27,10 +28,14 @@ class BeeConfig():
 
     def load(self):
         try:
-            if not os.path.exists("config.json"):
-                config_dist = os.path.dirname(os.path.realpath(__file__)) + os.sep + "config-dist.json"
-                shutil.copy(config_dist, "config.json")
-            f = open("config.json", "r")
+            if not os.path.exists(self.path):
+                # Move the old config?
+                if os.path.exists("config.json"):
+                    shutil.move("config.json", self.path)
+                else:
+                    config_dist = os.path.dirname(os.path.realpath(__file__)) + os.sep + "config-dist.json"
+                    shutil.copy(config_dist, self.path)
+            f = open(self.path, "r")
             self.data = json.load(f)
             f.close()
 
@@ -40,7 +45,7 @@ class BeeConfig():
             raise RuntimeError("Error parsing config file: %s" % e)
 
     def save(self, data):
-        f = open("config.json", "w")
+        f = open(self.path, "w")
         f.write(json.dumps(data, indent=2))
         f.close()
         self.data = data
@@ -225,7 +230,8 @@ def loadLogger():
     formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
 
     # create file handler which logs even debug messages (max 25mb)
-    fh = logging.handlers.RotatingFileHandler('info.log', maxBytes=26214400, backupCount = 3)
+    log_file = os.path.dirname(os.path.realpath(__file__)) + os.sep + 'info.log'
+    fh = logging.handlers.RotatingFileHandler(log_file, maxBytes=26214400, backupCount = 3)
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(formatter)
     logger.addHandler(fh)

@@ -3,7 +3,6 @@ import hashlib
 import json
 import logging
 import os
-import stacktracer
 import sys
 import threading
 import time
@@ -12,10 +11,11 @@ import Queue
 from bumblebee import botqueueapi
 from bumblebee import camera_control
 from bumblebee import hive
+from bumblebee import stacktracer
 from bumblebee import workerbee
 
 # Redirect stderr to nothing
-sys.stderr = open(os.devnull, 'w')
+#sys.stderr = open(os.devnull, 'w')
 
 class BumbleBee():
     sleepTime = 0.5
