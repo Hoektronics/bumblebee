@@ -14,7 +14,6 @@ mutex = Lock()
 def __run_picture_command(command, log):
     outputLog = ""
     errorLog = ""
-    # this starts our thread to slice the model into gcode
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     # log.info("Webcam Capture started.")
     while p.poll() is None:
@@ -46,6 +45,7 @@ def __run_picture_command(command, log):
 
 
 def takePicture(device, watermark=None, output="webcam.jpg", brightness=50, contrast=50):
+    output = hive.getImageDirectory(output)
     with mutex:
         log = logging.getLogger('botqueue')
 

@@ -161,18 +161,25 @@ def md5sumfile(filename, block_size=2 ** 18):
 
 
 def getCacheDirectory():
-    global_config = config.get()
-    if 'cache_directory' in global_config:
-        cacheDir = global_config['cache_directory']
-    else:
-        realPath = os.path.dirname(os.path.realpath(__file__))
-        cacheDir = "%s/cache/" % (realPath)
+    realPath = os.path.dirname(os.path.realpath(__file__))
+    cacheDir = "%s%scache%s" % (realPath, os.sep, os.sep)
 
     # make it if it doesn't exist.
     if not os.path.isdir(cacheDir):
         os.mkdir(cacheDir)
 
     return cacheDir
+
+def getImageDirectory(filename):
+    realPath = os.path.dirname(os.path.realpath(__file__))
+    imageDir = "%s%simages" % (realPath, os.sep)
+
+    # make it if it doesn't exist.
+    if not os.path.isdir(imageDir):
+        os.mkdir(imageDir)
+
+    path = "%s%s%s" % (imageDir, os.sep, filename)
+    return path
 
 
 def determineOS():
