@@ -13,9 +13,9 @@ URL = "http://github.com/Hoektronics/bumblebee/"
 
 PACKAGES = ["bumblebee", "bumblebee.drivers"]
 PKG_DATA = {"bumblebee":["config-dist.json","imagesnap"]}
-REQUIRES = ["Pygments", "pyserial", "requests", "requests-oauth"]
+DEPENDS = ["git://github.com/makerbot/pyserial#egg=pyserial"]
+REQUIRES = ["Pygments", "pyserial", "requests-oauth", "autoupgrade"]
 EXCLUDES = ["pydoc"]
-SCRIPTS = ["bumblebee/app.py"]
 
 setup(name=NAME,
       author="Zach 'Hoeken' Smith",
@@ -28,7 +28,7 @@ setup(name=NAME,
       entry_points={
          "console_scripts":["bumblebee = bumblebee.app:main"]
       },
-      scripts=SCRIPTS,
+      dependency_links=DEPENDS,
       install_requires=REQUIRES,
       package_data=PKG_DATA
      )

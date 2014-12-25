@@ -14,6 +14,13 @@ from bumblebee import hive
 from bumblebee import stacktracer
 from bumblebee import workerbee
 
+try:
+    from autoupgrade import AutoUpgrade
+    auto_update = True
+except ImportError:
+    auto_update = False
+    pass
+
 # Redirect stderr to nothing
 #sys.stderr = open(os.devnull, 'w')
 
@@ -21,9 +28,14 @@ class BumbleBee():
     sleepTime = 0.5
 
     def __init__(self):
+        if auto_update:
+            self.app = AutoUpgrade("bqclient")
+        else:
+            self.app = None
         self.lastScanUpdate = 0
         self.lastScreenUpdate = 0
         self.lastBotUpdate = 0
+        self.lastUpgradeCheck = 0
         hive.loadLogger()
         self.log = logging.getLogger('botqueue')
         self.workers = {}
@@ -179,6 +191,23 @@ class BumbleBee():
         if time.time() - self.lastScanUpdate > 60:
             self.scanDevices()
             self.lastScanUpdate = time.time()
+        if time.time() - self.lastUpgradeCheck > 120:
+            self.upgradeIfPossible()
+            self.lastUpgradeCheck = time.time()
+
+    def upgradeIfPossible(self):
+        can_upgrade = self.app is not None
+        for idx, link in self.workers.iteritems():
+            bot = link.bot
+            if bot['status'] != 'idle' and bot['status'] != 'offline' and bot['status'] != 'error':
+                self.log.debug("%s has status %s" % (bot['name'], bot['status']))
+                can_upgrade = False
+
+        if can_upgrade and self.app.check():
+            self.log.info("Updating...")
+            self.app.upgrade(dependencies=True)
+            self.log.info("Update complete. Restarting")
+            self.app.restart()
 
     def mainMenu(self, screen):
         try:
@@ -357,7 +386,6 @@ class BumbleBee():
         else:
             raise Exception("Error finding new job: %s" % result['error'])
         return False
-
 
 def main():
     bee = BumbleBee()
