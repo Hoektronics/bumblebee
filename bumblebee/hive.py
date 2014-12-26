@@ -227,6 +227,8 @@ def convertToString(input):
         result = input.encode('utf-8')
     return result
 
+def getLogPath():
+    return os.path.dirname(os.path.realpath(__file__)) + os.sep + 'info.log'
 
 def loadLogger():
     # create logger with 'spam_application'
@@ -237,7 +239,7 @@ def loadLogger():
     formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
 
     # create file handler which logs even debug messages (max 25mb)
-    log_file = os.path.dirname(os.path.realpath(__file__)) + os.sep + 'info.log'
+    log_file = getLogPath()
     fh = logging.handlers.RotatingFileHandler(log_file, maxBytes=26214400, backupCount = 3)
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(formatter)

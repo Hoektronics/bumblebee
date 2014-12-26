@@ -200,7 +200,6 @@ class BumbleBee():
         for idx, link in self.workers.iteritems():
             bot = link.bot
             if bot['status'] != 'idle' and bot['status'] != 'offline' and bot['status'] != 'error':
-                self.log.debug("%s has status %s" % (bot['name'], bot['status']))
                 can_upgrade = False
 
         if can_upgrade and self.app.check():

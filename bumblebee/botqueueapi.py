@@ -8,6 +8,7 @@ from oauth_hook import OAuthHook
 import requests
 
 from bumblebee import hive
+from bumblebee import _version
 
 
 class NetworkError(Exception):
@@ -23,7 +24,7 @@ class AuthError(Exception):
 
 
 class BotQueueAPI():
-    version = '0.5'
+    version = _version.__version__
     name = 'Bumblebee'
     localip = None
 
