@@ -32,10 +32,13 @@ class BumbleBee():
             self.app = autoupgrade.AutoUpgrade("bqclient", "https://pypi.python.org/simple")
         else:
             self.app = None
+        self.screen = None
         self.lastScanUpdate = 0
         self.lastScreenUpdate = 0
         self.lastBotUpdate = 0
         self.lastUpgradeCheck = 0
+        self.canUpgrade = False
+        self.restart = False
         hive.loadLogger()
         self.log = logging.getLogger('botqueue')
         self.workers = {}
@@ -180,6 +183,8 @@ class BumbleBee():
             while not self.quit:
                 self.handleServerUpdates()
                 time.sleep(self.sleepTime)
+        if self.canUpgrade:
+            self.upgrade()
 
 
     def handleServerUpdates(self):
@@ -187,22 +192,28 @@ class BumbleBee():
         self.checkMessages()
         if time.time() - self.lastBotUpdate > 10:
             self.getBots()
+            if not self.botsAreBusy() and self.canUpgrade:
+                self.log.debug("Bots aren't busy, we can restart")
+                self.restart = True
+                self.handleQuit()
             self.lastBotUpdate = time.time()
         if time.time() - self.lastScanUpdate > 60:
             self.scanDevices()
             self.lastScanUpdate = time.time()
         if time.time() - self.lastUpgradeCheck > 120:
-            self.upgradeIfPossible()
+            self.canUpgrade = self.app is not None and self.app.check()
             self.lastUpgradeCheck = time.time()
 
-    def upgradeIfPossible(self):
-        can_upgrade = self.app is not None
+    def botsAreBusy(self):
+        bots_busy = False
         for idx, link in self.workers.iteritems():
             bot = link.bot
             if bot['status'] != 'idle' and bot['status'] != 'offline' and bot['status'] != 'error':
-                can_upgrade = False
+                bots_busy = True
+        return bots_busy
 
-        if can_upgrade and self.app.check():
+    def upgrade(self):
+        if self.canUpgrade and self.restart:
             self.log.info("Updating...")
             self.app.upgrade(dependencies=True)
             self.log.info("Update complete. Restarting")
@@ -261,7 +272,7 @@ class BumbleBee():
                 threads = 0
                 if link.process.is_alive():
                     threads = threads + 1
-            if time.time() - self.lastUpdate > 1:
+            if self.screen is not None and time.time() - self.lastUpdate > 1:
                 self.screen.erase()
                 self.screen.addstr("%s\n\n" % time.asctime())
                 self.screen.addstr("Waiting for worker threads to shut down (%d/%d)" % (threads, len(self.workers)))
@@ -271,7 +282,8 @@ class BumbleBee():
         # stop our thread tracking.
         stacktracer.trace_stop()
 
-        self.screen.erase()
+        if self.screen is not None:
+            self.screen.erase()
 
     def sendMessage(self, link, name, data=False):
         self.checkMessages()
