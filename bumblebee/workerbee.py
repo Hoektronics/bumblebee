@@ -139,7 +139,8 @@ class WorkerBee():
                 if time.time() - lastWebcamUpdate > 60:
                     outputName = "bot-%s.jpg" % self.data['id']
                     if self.takePicture(outputName):
-                        self.api.webcamUpdate(outputName, bot_id=self.data['id'])
+                        fullImgPath = hive.getImageDirectory(outputName)
+                        self.api.webcamUpdate(fullImgPath, bot_id=self.data['id'])
                     lastWebcamUpdate = time.time()
 
                 time.sleep(self.sleepTime)  # sleep for a bit to not hog resources
