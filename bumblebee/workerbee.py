@@ -430,7 +430,8 @@ class WorkerBee():
         outputName = "bot-%s.jpg" % self.data['id']
 
         if self.takePicture(outputName):
-            self.api.webcamUpdate(outputName,
+            fullImgPath = hive.getImageDirectory(outputName)
+            self.api.webcamUpdate(fullImgPath,
                                   job_id=self.data['job']['id'],
                                   progress="%0.5f" % float(latest),
                                   temps=temps)

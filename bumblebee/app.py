@@ -97,7 +97,8 @@ class BumbleBee():
                     try:
                         if camera_control.takePicture(camera['device'], watermark=None, output=outfile):
                             self.lastImageTime = time.time()
-                            camera_files.append(outfile)
+                            fullImgPath = hive.getImageDirectory(outfile)
+                            camera_files.append(fullImgPath)
                     except Exception as ex:
                         self.log.exception(ex)
 
