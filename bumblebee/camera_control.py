@@ -56,8 +56,8 @@ def takePicture(device, watermark=None, output="webcam.jpg", brightness=50, cont
                 imagesnap = os.path.dirname(os.path.realpath(__file__)) + os.sep + "imagesnap"
                 command = "%s -q -d '%s' -w 2.0 '%s' && " \
                           "sips --resampleWidth 640" \
-                          "--padToHeightWidth 480 640" \
-                          "--padColor FFFFFF -s formatOptions 60%% '%s' 2>/dev/null" % (
+                          " --padToHeightWidth 480 640" \
+                          " --padColor FFFFFF -s formatOptions 60%% '%s' 2>/dev/null" % (
                               imagesnap,
                               device,
                               output,
@@ -79,10 +79,10 @@ def takePicture(device, watermark=None, output="webcam.jpg", brightness=50, cont
                         return False
                 else:
                     command = "exec /usr/bin/fswebcam" \
-                              "-q --jpeg 60 -d '%s'" \
-                              "-r 640x480 --title '%s'" \
-                              "--set brightness=%s%%" \
-                              "--set contrast=%s%% '%s'" % (
+                              " -q --jpeg 60 -d '%s'" \
+                              " -r 640x480 --title '%s'" \
+                              " --set brightness=%s%%" \
+                              " --set contrast=%s%% '%s'" % (
                                   device,
                                   watermark,
                                   brightness,
