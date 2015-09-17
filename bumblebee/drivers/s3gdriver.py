@@ -60,15 +60,15 @@ class s3gdriver(bumbledriver.bumbledriver):
 
         self.currentProgress = 0
         self.totalPayloads = len(payloads)
-        temperatureCount = 0
+        temperature_count = 0
 
         while self.currentProgress < self.totalPayloads and self.printing:
-            payload = self.convertPayload(payloads[self.currentProgress])
-            temperatureCount += 1
+            payload = self.convert_payload(payloads[self.currentProgress])
+            temperature_count += 1
             try:
-                if temperatureCount == 10:
+                if temperature_count == 10:
                     self.temperature = self.s3g.get_toolhead_temperature(0)
-                    temperatureCount = 0
+                    temperature_count = 0
                 self.s3g.writer.send_command(payload)
                 self.currentProgress += 1
             except makerbot_driver.BufferOverflowError as ex:
@@ -80,21 +80,38 @@ class s3gdriver(bumbledriver.bumbledriver):
 
         self.s3g.build_end_notification()
 
-    def convertPayload(self, payload):
-        cmd, payload = payload[0], payload[1:]
-        cmdFormat = makerbot_driver.FileReader.hostFormats[cmd]
-        structFormats = makerbot_driver.FileReader.structFormats
-        result = []
-        for fmt, data in zip(cmdFormat, payload):
-            if(fmt == 'B'):
-                result.append(data)
+    def convert_payload(self, payload):
+        host_command = payload[0]
+        host_payload = payload[1:]
+        host_command_format = makerbot_driver.FileReader.hostFormats[host_command]
+        result = self.convert(host_command, host_command_format, host_payload);
+
+        if host_command == 136:
+            slave_command = host_payload[1]
+            slave_payload = host_payload[len(host_command_format):]
+            slave_command_format = makerbot_driver.FileReader.slaveFormats[slave_command]
+            result.extend(self.convert(slave_command, slave_command_format, slave_payload))
+
+        return result
+
+    def convert(self, command, command_format, payload):
+        struct_formats = makerbot_driver.FileReader.structFormats
+        result = [command]
+        for data_format, data in zip(command_format, payload):
+            if data_format == 'B':
+                result.extend([data])
                 continue
-            if fmt == 's':
-                fmt = str(len(data)) + "s"
-                newFormat = "<" + str(len(data)) + "B"
-            else:
-                newFormat = "<" + str(structFormats[fmt]) + "B"
-            result.extend(struct.unpack(newFormat, struct.pack(fmt, data)))
+
+            old_format = data_format
+            new_format = '<' + str(struct_formats[data_format]) + 'B'
+
+            if data_format == 's':
+                old_format = str(len(data)) + 's'
+                new_format = "<" + str(len(data)) + 'B'
+
+            new_structure = struct.unpack(new_format, struct.pack(old_format, data))
+            result.extend(new_structure)
+
         return result
 
     def getPercentage(self):
