@@ -40,7 +40,7 @@ class bumbledriver(object):
 
     def startPrint(self, jobfile):
         self.log.debug("Bumbledrive: startprint")
-        if (self.isRunning() or not self.isConnected()):
+        if self.isRunning() or not self.isConnected():
             return False
 
         self.log.debug("Bumbledrive: starting thread.")
@@ -55,6 +55,9 @@ class bumbledriver(object):
             self.finishPrint()
         except Exception as ex:
             self.log.exception(ex)
+            raise ex
+        finally:
+            self.disconnect()
 
     def finishPrint(self):
         self.log.debug("Bumbledrive: finishing print.")

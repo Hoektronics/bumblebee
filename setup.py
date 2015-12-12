@@ -1,8 +1,6 @@
-from distutils.core import setup
+import sys
 
 import re
-import sys
-from setuptools import find_packages
 if sys.version_info > (3,):
     from setuptools import setup
 else:
@@ -15,7 +13,7 @@ URL = "http://github.com/Hoektronics/bumblebee/"
 PACKAGES = ["bumblebee", "bumblebee.drivers"]
 PKG_DATA = {"bumblebee":["config-dist.json","imagesnap"]}
 DEPENDS = ["git://github.com/makerbot/pyserial#egg=pyserial"]
-REQUIRES = ["Pygments", "pyserial", "requests-oauth", "beautifulsoup4"]
+REQUIRES = ["Pygments", "pyserial", "requests-oauth", "beautifulsoup4", "makerbot-driver"]
 EXCLUDES = ["pydoc"]
 
 VERSIONFILE = "bumblebee/_version.py"

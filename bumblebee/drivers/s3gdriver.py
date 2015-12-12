@@ -4,24 +4,11 @@ import shutil
 import struct
 import sys
 import time
-
 from bumblebee import hive
 from bumblebee.drivers import bumbledriver
 from threading import Thread, Condition
-
-old_lib_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)) + os.sep + 's3g')
-if os.path.exists(old_lib_path):
-    shutil.rmtree(old_lib_path)
-
-lib_path = hive.getEngine('s3g', type="driver", repo="https://github.com/makerbot/s3g")
-sys.path.append(lib_path)
-
-# this has to come after the above code
-try:
-    import makerbot_driver
-    import serial
-except Exception as ex:
-    raise Exception("Please use Makerbot's version of pyserial")
+import makerbot_driver
+import serial
 
 
 class s3gdriver(bumbledriver.bumbledriver):
@@ -36,18 +23,13 @@ class s3gdriver(bumbledriver.bumbledriver):
         self.temperature = None
 
     def startPrint(self, jobfile):
-        try:
-            self.jobfile = jobfile
-            self.printing = True
-            self.connect()
-            while not self.isConnected():
-                time.sleep(1)
-                self.log.debug("Waiting for driver to connect.")
-            self.printThread = Thread(target=self.printThreadEntry).start()
-        except Exception as ex:
-            self.log.error("Error starting print: %s" % ex)
-            self.disconnect()
-            raise ex
+        self.jobfile = jobfile
+        self.printing = True
+        self.connect()
+        while not self.isConnected():
+            time.sleep(1)
+            self.log.debug("Waiting for driver to connect.")
+        self.printThread = Thread(target=self.printThreadEntry).start()
 
     def executeFile(self):
         self.s3g.init()
@@ -61,14 +43,18 @@ class s3gdriver(bumbledriver.bumbledriver):
         self.currentProgress = 0
         self.totalPayloads = len(payloads)
         temperature_count = 0
+        build_end_notification_sent = False
 
         while self.currentProgress < self.totalPayloads and self.printing:
             payload = self.convert_payload(payloads[self.currentProgress])
+            if payload[0] == makerbot_driver.constants.host_action_command_dict['BUILD_END_NOTIFICATION']:
+                build_end_notification_sent = True
             temperature_count += 1
             try:
                 if temperature_count == 10:
                     self.temperature = self.s3g.get_toolhead_temperature(0)
                     temperature_count = 0
+
                 self.s3g.writer.send_command(payload)
                 self.currentProgress += 1
             except makerbot_driver.BufferOverflowError as ex:
@@ -78,25 +64,28 @@ class s3gdriver(bumbledriver.bumbledriver):
         while not self.s3g.is_finished():
             time.sleep(1)
 
-        self.s3g.build_end_notification()
+        if self.printing:
+            if not build_end_notification_sent:
+                self.s3g.build_end_notification()
 
     def convert_payload(self, payload):
         host_command = payload[0]
         host_payload = payload[1:]
         host_command_format = makerbot_driver.FileReader.hostFormats[host_command]
-        result = self.convert(host_command, host_command_format, host_payload);
+        result = [host_command]
+        result.extend(self.convert(host_command_format, host_payload))
 
         if host_command == 136:
             slave_command = host_payload[1]
             slave_payload = host_payload[len(host_command_format):]
             slave_command_format = makerbot_driver.FileReader.slaveFormats[slave_command]
-            result.extend(self.convert(slave_command, slave_command_format, slave_payload))
+            result.extend(self.convert(slave_command_format, slave_payload))
 
         return result
 
-    def convert(self, command, command_format, payload):
+    def convert(self, command_format, payload):
         struct_formats = makerbot_driver.FileReader.structFormats
-        result = [command]
+        result = []
         for data_format, data in zip(command_format, payload):
             if data_format == 'B':
                 result.extend([data])
@@ -121,8 +110,8 @@ class s3gdriver(bumbledriver.bumbledriver):
         if not self.isConnected():
             try:
                 self.s3g = makerbot_driver.s3g.from_filename(
-                    port=self.config['port'],
-                    baudrate=self.config['baud'],
+                    port=str(self.config['port']),
+                    baudrate=int(self.config['baud']),
                     condition=Condition()
                 )
 
@@ -163,7 +152,7 @@ class s3gdriver(bumbledriver.bumbledriver):
     def stop(self):
         self.printing = False
         if self.isConnected():
-            # Sleep so no knew commands are sent
+            # Sleep so no new commands are sent
             time.sleep(1)
             self.s3g.abort_immediately()
             super(s3gdriver, self).stop()

@@ -11,3 +11,4 @@ engines*
 build/
 dist/
 *.egg-info/
+.env

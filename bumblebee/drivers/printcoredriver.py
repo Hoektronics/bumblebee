@@ -46,6 +46,7 @@ class printcoredriver(bumbledriver.bumbledriver):
         self.log = logging.getLogger('botqueue')
         self.printThread = None
         self.temperatures = {}
+        self.p = None
 
     def startPrint(self, jobfile):
         self.p = printcore.printcore()
@@ -69,10 +70,8 @@ class printcoredriver(bumbledriver.bumbledriver):
             self.gcoder = gcoder.GCode(jobfile.localFile)
             self.p.startprint(self.gcoder)
             self.printThread = Thread(target=self.printThreadEntry).start()
-        except Exception as ex:
-            self.log.error("Error starting print: %s" % ex)
+        finally:
             self.disconnect()
-            raise ex
 
     # this doesn't do much, just a thread to watch our thread indirectly.
     def executeFile(self):
@@ -142,7 +141,7 @@ class printcoredriver(bumbledriver.bumbledriver):
 
     def connect(self):
         if not self.isConnected():
-            self.p.connect(self.config['port'], self.config['baud'])
+            self.p.connect(str(self.config['port']), int(self.config['baud']))
             super(printcoredriver, self).connect()
 
     def disconnect(self):

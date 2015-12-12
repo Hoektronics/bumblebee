@@ -402,3 +402,7 @@ class BumbleBee():
 def main():
     bee = BumbleBee()
     bee.main()
+
+
+if __name__ == "__main__":
+    sys.exit(main())
