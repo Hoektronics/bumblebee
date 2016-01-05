@@ -1,6 +1,7 @@
 import sys
 
 import re
+
 if sys.version_info > (3,):
     from setuptools import setup
 else:
@@ -11,9 +12,9 @@ DESCRIPTION = "BotQueue's client bumblebee"
 URL = "http://github.com/Hoektronics/bumblebee/"
 
 PACKAGES = ["bumblebee", "bumblebee.drivers"]
-PKG_DATA = {"bumblebee":["config-dist.json","imagesnap"]}
+PKG_DATA = {"bumblebee": ["config-dist.json", "imagesnap"]}
 DEPENDS = ["git://github.com/makerbot/pyserial#egg=pyserial"]
-REQUIRES = ["Pygments", "pyserial", "requests-oauth", "beautifulsoup4", "makerbot-driver"]
+REQUIRES = ["Pygments", "pyserial==2.7", "requests-oauth", "beautifulsoup4", "makerbot-driver", "appdirs"]
 EXCLUDES = ["pydoc"]
 
 VERSIONFILE = "bumblebee/_version.py"
@@ -35,10 +36,9 @@ setup(name=NAME,
       url=URL,
       packages=PACKAGES,
       entry_points={
-         "console_scripts":["bumblebee = bumblebee.__main__:main"]
+          "console_scripts": ["bumblebee = bumblebee.__main__:main"]
       },
       dependency_links=DEPENDS,
       install_requires=REQUIRES,
       package_data=PKG_DATA
-     )
-
+      )

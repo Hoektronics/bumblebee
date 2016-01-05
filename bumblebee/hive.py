@@ -2,58 +2,20 @@ import hashlib
 import json
 import logging
 import logging.handlers
-import os
 import pprint
-import shutil
 import sys
 import tarfile
 import tempfile
-from threading import Thread
 import time
 import urllib2
+from threading import Thread
 
+import os
 from bumblebee import drivers
-
-
-class BeeConfig():
-    def __init__(self):
-        self.data = []
-        self.loaded = False
-        self.path = os.path.dirname(os.path.realpath(__file__)) + os.sep + "config.json"
-
-    def get(self):
-        if not self.loaded:
-            self.load()
-        return self.data
-
-    def load(self):
-        try:
-            if not os.path.exists(self.path):
-                # Move the old config?
-                if os.path.exists("config.json"):
-                    shutil.move("config.json", self.path)
-                else:
-                    config_dist = os.path.dirname(os.path.realpath(__file__)) + os.sep + "config-dist.json"
-                    shutil.copy(config_dist, self.path)
-            f = open(self.path, "r")
-            self.data = json.load(f)
-            f.close()
-
-            return f
-        except ValueError as e:
-            print("Error parsing config file: %s" % e)
-            raise RuntimeError("Error parsing config file: %s" % e)
-
-    def save(self, data):
-        f = open(self.path, "w")
-        f.write(json.dumps(data, indent=2))
-        f.close()
-        self.data = data
 
 
 class URLFile():
     def __init__(self, filedata):
-        self.global_config = config.get()
         self.log = logging.getLogger('botqueue')
 
         # init our local variables.
@@ -337,5 +299,5 @@ def download(url, localFileName):
         localFile.write(data)
     localFile.close()
 
-config = BeeConfig()
+
 debug = pprint.PrettyPrinter(indent=4)

@@ -6,7 +6,6 @@ class APITest():
     def __init__(self):
         hive.loadLogger()
         self.api = botqueueapi.BotQueueAPI()
-        self.config = hive.config.get()
 
     def main(self):
         print "Starting up"

@@ -1,15 +1,15 @@
 import argparse
-import os
 import sys
+
 
 def main():
     parser = argparse.ArgumentParser(description="BotQueue's client bumblebee")
 
-    subparser = parser.add_subparsers(dest="command", help='command help')
+    command_parser = parser.add_subparsers(dest="command", help='command help')
 
-    parser_log = subparser.add_parser('log', help='Log utilities')
+    parser_log = command_parser.add_parser('log', help='Log utilities')
 
-    parser_config = subparser.add_parser('config', help='Configuration control')
+    parser_config = command_parser.add_parser('config', help='Configuration control')
     parser_config.add_argument("--server", help="Change config to use a different server")
 
     if len(sys.argv) == 1:
@@ -21,15 +21,16 @@ def main():
 
     # Figure out how to actually follow the log
     if args.command == "log":
-        from .hive import getLogPath
+        from bumblebee.hive import getLogPath
         print getLogPath()
 
     if args.command == "config":
         import hashlib
         import time
 
-        from bumblebee import hive
-        config = hive.config.get()
+        from bumblebee.bee_config import BeeConfig
+
+        config = BeeConfig()
         if args.server is not None:
             url = args.server
             if url[-1:] == '/':
@@ -47,7 +48,7 @@ def main():
             if 'uid' not in config or not config['uid']:
                 config['uid'] = hashlib.sha1(str(time.time())).hexdigest()
 
-            hive.config.save(config)
+            config.save()
 
             print "Now you can run the client to register"
         else:
@@ -58,6 +59,7 @@ def main():
                 print "App has been registered"
             else:
                 print "App has not been registered yet"
+
 
 if __name__ == "__main__":
     main()

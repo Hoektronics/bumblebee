@@ -23,14 +23,14 @@ class AuthError(Exception):
     pass
 
 
-class BotQueueAPI():
+class BotQueueAPI:
     version = _version.__version__
     name = 'Bumblebee'
     localip = None
 
-    def __init__(self):
+    def __init__(self, config):
         self.log = logging.getLogger('botqueue')
-        self.config = hive.config.get()
+        self.config = config
         self.netStatus = False
         self.netErrors = 0
 
@@ -237,7 +237,7 @@ class BotQueueAPI():
             # record the key in our config
             self.config['app']['token_key'] = self.token_key
             self.config['app']['token_secret'] = self.token_secret
-            hive.config.save(self.config)
+            self.config.save()
 
         except Exception as ex:
             self.log.exception(ex)

@@ -17,16 +17,7 @@ class WorkerBee():
     sleepTime = 0.5
 
     def __init__(self, data, mosi_queue, miso_queue):
-
-        # find our local config info.
-        self.global_config = hive.config.get()
-        if data['driver_config']:
-            self.config = data['driver_config']
-        else:
-            self.log.error("Driver config not found!  Falling back to hardcoded workers.")
-            for row in self.global_config['workers']:
-                if row['name'] == data['name']:
-                    self.config = row
+        self.config = data['driver_config']
 
         # communications with our mother bee!
         self.mosi_queue = mosi_queue
