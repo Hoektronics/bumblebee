@@ -51,14 +51,14 @@ class URLFile():
                     self.localSize = os.path.getsize(self.localPath)
                     self.localFile = open(self.localPath, "rb")
                     self.progress = 100
-            #  okay, should we open it for writing?
+            # okay, should we open it for writing?
             if not os.path.exists(self.localPath):
                 self.localFile = open(self.localPath, "w+b")
         except Exception:
             self.localFile = tempfile.NamedTemporaryFile()
             self.localPath = self.localFile.name
 
-    #  download our job and make sure its cool
+    # download our job and make sure its cool
     def downloadFile(self):
         #  do we need to download it?
         if not self.cacheHit:
@@ -79,7 +79,7 @@ class URLFile():
                         self.localSize = self.localSize + len(data)
                         self.progress = float(self.localSize) / float(self.remotefile['size']) * 100
 
-                    #  check our final md5 sum.
+                    # check our final md5 sum.
                     if md5.hexdigest() != self.remotefile['md5']:
                         self.log.error(
                             "Downloaded file hash did not match! %s != %s" % (md5.hexdigest(), self.remotefile['md5']))
@@ -131,6 +131,7 @@ def getCacheDirectory():
         os.mkdir(cacheDir)
 
     return cacheDir
+
 
 def getImageDirectory(filename):
     realPath = os.path.dirname(os.path.realpath(__file__))
@@ -189,8 +190,10 @@ def convertToString(input):
         result = input.encode('utf-8')
     return result
 
+
 def getLogPath():
     return os.path.dirname(os.path.realpath(__file__)) + os.sep + 'info.log'
+
 
 def loadLogger():
     # create logger with 'spam_application'
@@ -202,7 +205,7 @@ def loadLogger():
 
     # create file handler which logs even debug messages (max 25mb)
     log_file = getLogPath()
-    fh = logging.handlers.RotatingFileHandler(log_file, maxBytes=26214400, backupCount = 3)
+    fh = logging.handlers.RotatingFileHandler(log_file, maxBytes=26214400, backupCount=3)
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(formatter)
     logger.addHandler(fh)
@@ -213,11 +216,12 @@ def loadLogger():
     #  ch.setFormatter(formatter)
     #  logger.addHandler(ch)
 
+
 def getEngine(engine_name,
-            type=None,
-            repo=None):
+              type=None,
+              repo=None):
     log = logging.getLogger('botqueue')
-    
+
     engines = os.path.dirname(os.path.realpath(__file__))
     engines = engines + os.sep + "engines" + os.sep + type
     if not os.path.exists(os.path.abspath(engines)):
@@ -234,6 +238,7 @@ def getEngine(engine_name,
     call(['git', 'clone', repo, engine_path], stdout=log_stream, stderr=log_stream)
     log.info("Downloading %s finished" % engine_name)
     return engine_path
+
 
 def downloadSlicer(engine_path, engine_type, installPath):
     myos = determineOS()
@@ -285,6 +290,7 @@ def downloadSlicer(engine_path, engine_type, installPath):
     finally:
         if tarFileName is not None:
             os.remove(tarFileName)
+
 
 def download(url, localFileName):
     localFile = open(localFileName, 'wb')

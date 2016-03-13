@@ -1,61 +1,58 @@
 import json
 import logging
-import os
-import random
 import shutil
 import time
+import threading
 
-from bumblebee import botqueueapi
+import os
 from bumblebee import camera_control
 from bumblebee import drivers
-from bumblebee import hive
 from bumblebee import ginsu
+from bumblebee import hive
 
 
-class WorkerBee():
-    data = {}
+class WorkerBee:
     sleepTime = 0.5
 
-    def __init__(self, data, mosi_queue, miso_queue):
+    def __init__(self, api, data):
         self.config = data['driver_config']
-
-        # communications with our mother bee!
-        self.mosi_queue = mosi_queue
-        self.miso_queue = miso_queue
+        self.bot_name = self.bot_name
 
         # we need logging!
         self.log = logging.getLogger('botqueue')
 
-        # get various objects we'll need
-        self.api = botqueueapi.BotQueueAPI()
+        self.api = api
         self.data = data
+        self.data_lock = threading.RLock()
 
         self.driver = None
         self.cacheHit = False
         self.running = False
+        self.job_file = None
 
-        # load up our driver
-        self.initializeDriver()
-
-        # look at our current state to check for problems.
-        try:
-            self.startupCheckState()
-        except Exception as ex:
-            self.exception(ex)
-
-    def startupCheckState(self):
         self.info("Bot startup")
 
-        # we shouldn't startup in a working state... that implies some sort of error.
-        if (self.data['status'] == 'working'):
-            self.errorMode("Startup in %s mode, dropping job # %s" % (self.data['status'], self.data['job']['id']))
+        # load up our driver
+        self.initialize_driver()
 
-    def errorMode(self, error):
+        # look at our current state to check for problems.
+        self.startup_check_state()
+
+
+        self.thread = threading.Thread(target=self.run)
+        self.thread.start()
+
+    def startup_check_state(self):
+        # we shouldn't startup in a working state... that implies some sort of error.
+        if self.data['status'] == 'working':
+            self.error_mode("Startup in %s mode, dropping job # %s" % (self.data['status'], self.data['job']['id']))
+
+    def error_mode(self, error):
         self.error("Error mode: %s" % error)
 
         # drop 'em if you got em.
         try:
-            self.dropJob(error)
+            self.drop_job(error)
         except Exception as ex:
             self.exception(ex)
 
@@ -63,65 +60,45 @@ class WorkerBee():
         self.info("Setting bot status as error.")
         result = self.api.updateBotInfo({'bot_id': self.data['id'], 'status': 'error', 'error_text': error})
         if result['status'] == 'success':
-            self.changeStatus(result['data'])
+            self.update(result['data'])
         else:
             self.error("Error talking to mothership: %s" % result['error'])
 
-    def initializeDriver(self):
-        # try:
-        # if self.driver:
-        # self.driver.disconnect()
-        # except Exception as ex:
-        # self.exception("Disconnecting driver: %s" % ex)
-
+    def initialize_driver(self):
         try:
-            self.driver = self.driverFactory()
-            # self.debug("Connecting to driver.")
-            # self.driver.connect()
+            self.driver = self.driver_factory()
         except Exception as ex:
             self.exception(ex)  # dump a stacktrace for debugging.
-            self.errorMode(ex)
-            # self.driver.disconnect()
+            self.error_mode(ex)
 
-    def driverFactory(self):
+    def driver_factory(self):
 
         module_name = 'bumblebee.drivers.' + self.config['driver'] + 'driver'
         __import__(module_name)
 
-        if (self.config['driver'] == 's3g'):
+        if self.config['driver'] == 's3g':
             return drivers.s3gdriver.s3gdriver(self.config)
-        elif (self.config['driver'] == 'printcore'):
+        elif self.config['driver'] == 'printcore':
             return drivers.printcoredriver.printcoredriver(self.config)
-        elif (self.config['driver'] == 'dummy'):
+        elif self.config['driver'] == 'dummy':
             return drivers.dummydriver.dummydriver(self.config)
         else:
             raise Exception("Unknown driver specified.")
 
     # this is our entry point for the worker subprocess
     def run(self):
-        # sleep for a random time to avoid contention
-        time.sleep(random.random())
-
-        lastWebcamUpdate = time.time()
+        last_webcam_update_time = time.time()
         try:
             # okay, we're off!
             self.running = True
             while self.running:
-
-                # see if there are any messages from the motherbee
-                self.checkMessages()
-
-                # did we get a shutdown notice?
-                if not self.running:
-                    break
-
                 # slicing means we need to slice our job.
                 if self.data['status'] == 'slicing':
                     if self.data['job']['slicejob']['status'] == 'slicing' and self.config['can_slice']:
-                        self.sliceJob()
+                        self.slice_job()
                 # working means we need to process a job.
                 elif self.data['status'] == 'working':
-                    self.processJob()
+                    self.process_job()
                     # self.getOurInfo() # if there was a problem with the job,
                     # we'll find it by pulling in a new bot state and looping again.
                     self.debug("Bot finished @ state %s" % self.data['status'])
@@ -142,55 +119,87 @@ class WorkerBee():
 
         self.debug("Exiting.")
 
+    def is_alive(self):
+        return self.thread.is_alive()
+
+    def update(self, new_data):
+        with self.data_lock:
+            if new_data['status'] != self.data['status']:
+                self.info("Changing status from %s to %s" % (self.data['status'], new_data['status']))
+
+                # okay, are we transitioning from paused to unpaused?
+                if new_data['status'] == 'paused':
+                    self.pause_job()
+                if self.data['status'] == 'paused' and new_data['status'] == 'working':
+                    self.resume_job()
+
+            status = new_data['status']
+
+            # did our status change?  if so, make sure to stop our currently running job.
+            if self.data['status'] == 'working' or self.data['status'] == 'paused':
+                if status in ('idle', 'offline', 'error', 'maintenance'):
+                    self.info("Stopping job.")
+                    self.stop_job()
+
+            # did we get a new config?
+            if json.dumps(new_data['driver_config']) != json.dumps(self.config):
+                self.log.info("Driver config has changed, updating.")
+                self.config = new_data['driver_config']
+                self.initialize_driver()
+
+            self.data = new_data
+
     # get bot info from the mothership
-    def getOurInfo(self):
+    def get_our_info(self):
         self.debug("Looking up bot # %s." % self.data['id'])
 
         result = self.api.getBotInfo(self.data['id'])
-        if (result['status'] == 'success'):
-            self.changeStatus(result['data'])
+        if result['status'] == 'success':
+            self.update(result['data'])
         else:
             self.error("Error looking up bot info: %s" % result['error'])
             raise Exception("Error looking up bot info: %s" % result['error'])
 
-    # get bot info from the mothership
-    def getJobInfo(self):
-        self.debug("Looking up job # %s." % self.data['job']['id'])
-        result = self.api.jobInfo(self.data['job']['id'])
-        if (result['status'] == 'success'):
-            self.data['job'] = result['data']
-        else:
-            self.error("Error looking up job info: %s" % result['error'])
-            raise Exception("Error looking up job info: %s" % result['error'])
+    def get_new_job(self):
+        find_job_result = self.api.findNewJob(self.data['id'], self.config['can_slice'])
+        if find_job_result['status'] == 'success':
+            if len(find_job_result['data']):
+                job = find_job_result['data']
+                grab_job_result = self.api.grabJob(self.data['id'], job['id'], self.config['can_slice'])
 
-    def sliceJob(self):
+                if grab_job_result['status'] == 'success':
+                    self.data['job'] = job
+
+                    return True
+        else:
+            raise Exception("Error finding new job: %s" % find_job_result['error'])
+        return False
+
+    def slice_job(self):
         # download our slice file
-        sliceFile = self.downloadFile(self.data['job']['slicejob']['input_file'])
+        slice_file = self.download_file(self.data['job']['slicejob']['input_file'])
 
         # create and run our slicer
-        g = ginsu.Ginsu(sliceFile, self.data['job']['slicejob'])
+        g = ginsu.Ginsu(slice_file, self.data['job']['slicejob'])
         g.slice()
 
         # watch the slicing progress
-        localUpdate = 0
-        lastUpdate = 0
+        local_update = 0
+        last_update = 0
         while g.isRunning():
-            # check for messages like shutdown or stop job.
-            self.checkMessages()
             if not self.running or self.data['status'] != 'slicing':
                 self.debug("Stopping slice job")
                 g.stop()
                 return
 
             # notify the local mothership of our status.
-            if (time.time() - localUpdate > 0.5):
+            if time.time() - local_update > 0.5:
                 self.data['job']['progress'] = g.getProgress()
-                self.sendMessage('job_update', self.data['job'])
-                localUpdate = time.time()
+                local_update = time.time()
 
             # occasionally update home base.
-            if (time.time() - lastUpdate > 15):
-                lastUpdate = time.time()
+            if time.time() - last_update > 15:
+                last_update = time.time()
                 self.api.updateJobProgress(self.data['job']['id'], "%0.5f" % g.getProgress())
 
             time.sleep(self.sleepTime)
@@ -199,91 +208,79 @@ class WorkerBee():
         sushi = g.sliceResult
 
         # move the file to the cache directory
-        cacheDir = hive.getCacheDirectory()
-        baseFilename = os.path.splitext(os.path.basename(self.data['job']['slicejob']['input_file']['name']))[0]
+        cache_dir = hive.getCacheDirectory()
+        base_file_name = os.path.splitext(os.path.basename(self.data['job']['slicejob']['input_file']['name']))[0]
         md5sum = hive.md5sumfile(sushi.output_file)
-        uploadFile = "%s%s-%s.gcode" % (cacheDir, md5sum, baseFilename)
-        self.debug("Moved slice output to %s" % uploadFile)
-        shutil.copy(sushi.output_file, uploadFile)
+        upload_file = "%s%s-%s.gcode" % (cache_dir, md5sum, base_file_name)
+        self.debug("Moved slice output to %s" % upload_file)
+        shutil.copy(sushi.output_file, upload_file)
 
         # update our slice job progress and pull in our update info.
         self.info("Finished slicing, uploading results to main site.")
         result = self.api.updateSliceJob(job_id=self.data['job']['slicejob']['id'], status=sushi.status,
-                                         output=sushi.output_log, errors=sushi.error_log, filename=uploadFile)
-
-        # hack because the upload takes forever and mothership probably has an old status.
-        self.checkMessages()
+                                         output=sushi.output_log, errors=sushi.error_log, filename=upload_file)
 
         # now pull in our new data.
-        self.changeStatus(result['data'])
+        self.update(result['data'])
 
-        # notify the queen bee of our status.
-        self.sendMessage('job_update', self.data['job'])
+    def download_file(self, file_info):
+        my_file = hive.URLFile(file_info)
 
-    def downloadFile(self, fileinfo):
-        myfile = hive.URLFile(fileinfo)
-
-        localUpdate = 0
+        local_update = 0
         try:
-            myfile.load()
+            my_file.load()
 
-            while myfile.getProgress() < 100:
+            while my_file.getProgress() < 100:
                 # notify the local mothership of our status.
-                if (time.time() - localUpdate > 0.5):
-                    self.data['job']['progress'] = myfile.getProgress()
-                    self.sendMessage('job_update', self.data['job'])
-                    localUpdate = time.time()
+                if time.time() - local_update > 0.5:
+                    self.data['job']['progress'] = my_file.getProgress()
+                    local_update = time.time()
                 time.sleep(self.sleepTime)
             # okay, we're done... send it back.
-            return myfile
+            return my_file
         except Exception as ex:
             self.exception(ex)
 
-    def processJob(self):
+    def process_job(self):
         # go get 'em, tiger!
-        self.jobFile = self.downloadFile(self.data['job']['file'])
+        self.job_file = self.download_file(self.data['job']['file'])
 
         # notify the mothership of download completion
         self.api.downloadedJob(self.data['job']['id'])
 
-        localUpdate = 0
-        lastUpdate = 0
-        lastTemp = 0
+        local_update = 0
+        last_update = 0
+        last_temp = 0
         latest = 0
         try:
-            self.driver.startPrint(self.jobFile)
+            self.driver.startPrint(self.job_file)
             while self.driver.isRunning():
                 latest = self.driver.getPercentage()
 
                 # look up our temps?
-                if (time.time() - lastTemp > 1):
-                    lastTemp = time.time()
+                if time.time() - last_temp > 1:
+                    last_temp = time.time()
                     temps = self.driver.getTemperature()
 
                 # notify the mothership of our status.
-                if (time.time() - localUpdate > 0.5):
-                    localUpdate = time.time()
+                if time.time() - local_update > 0.5:
+                    local_update = time.time()
                     self.data['job']['progress'] = latest
                     self.data['job']['temperature'] = temps
-                    self.sendMessage('job_update', self.data['job'])
-
-                # check for messages like shutdown or stop job.
-                self.checkMessages()
 
                 # did we get paused?
                 while self.data['status'] == 'paused':
-                    self.checkMessages()
                     time.sleep(self.sleepTime)
 
                 # should we bail out of here?
                 if not self.running or self.data['status'] != 'working':
-                    self.stopJob()
+                    self.stop_job()
                     return
 
                 # occasionally update home base.
-                if (time.time() - lastUpdate > 15):
-                    lastUpdate = time.time()
-                    self.updateHomeBase(latest, temps)
+                if time.time() - last_update > 15:
+                    last_update = time.time()
+                    self.update_home_base(latest, temps)
 
                 if self.driver.hasError():
                     raise Exception(self.driver.getErrorMessage())
@@ -296,127 +293,65 @@ class WorkerBee():
 
                 # send up a final 100% info.
                 self.data['job']['progress'] = 100.0
-                self.updateHomeBase(latest, temps)
+                self.update_home_base(latest, temps)
 
                 # finish the job online, and mark as completed.
                 result = self.api.completeJob(self.data['job']['id'])
                 if result['status'] == 'success':
-                    self.changeStatus(result['data']['bot'])
-
-                    # notify the queen bee of our status.
-                    self.sendMessage('job_update', self.data['job'])
+                    self.update(result['data']['bot'])
                 else:
                     self.error("Error notifying mothership: %s" % result['error'])
         except Exception as ex:
             self.exception(ex)
-            self.errorMode(ex)
+            self.error_mode(ex)
 
-    def pauseJob(self):
+    def pause_job(self):
         self.info("Pausing job.")
         self.driver.pause()
 
-    def resumeJob(self):
+    def resume_job(self):
         self.info("Resuming job.")
         self.driver.resume()
 
-    def stopJob(self):
+    def stop_job(self):
         if self.driver is not None and not self.driver.hasError():
             if self.driver.isRunning() or self.driver.isPaused():
                 self.info("stopping driver.")
                 self.driver.stop()
 
-    def dropJob(self, error=False):
-        self.stopJob()
+    def drop_job(self, error=None):
+        self.stop_job()
 
         if len(self.data['job']) and self.data['job']['id']:
-            result = self.api.dropJob(self.data['job']['id'], error)
+            result = self.api.drop_job(self.data['job']['id'], error)
             self.info("Dropping existing job.")
-            if (result['status'] == 'success'):
-                self.getOurInfo()
+            if result['status'] == 'success':
+                self.get_our_info()
             else:
                 raise Exception("Unable to drop job: %s" % result['error'])
 
     def shutdown(self):
         self.info("Shutting down.")
-        if (self.data['status'] == 'working' and self.data['job']['id']):
-            self.dropJob("Shutting down.")
+        if self.data['status'] == 'working' and self.data['job']['id']:
+            self.drop_job(error="Shutting down.")
         self.running = False
 
-    def changeStatus(self, data):
-        # check for message sending first because if we get stale info, it might cause issues with our new state.
-        self.checkMessages()
-        self.sendMessage('bot_update', data)
-        self.data = data
-
-    def sendMessage(self, name, data=False):
-        self.checkMessages()
-        # self.debug("Sending message")
-        msg = Message(name, data)
-        self.miso_queue.put(msg)
-
-    # loop through our workers and check them all for messages
-    def checkMessages(self):
-        # self.debug("Checking messages.")
-        while not self.mosi_queue.empty():
-            message = self.mosi_queue.get(False)
-            self.handleMessage(message)
-            self.mosi_queue.task_done()
-
-    # these are the messages we know about.
-    def handleMessage(self, message):
-
-        # self.debug("Got message %s" % message.name)
-
-        # mothership gave us new information!
-        if message.name == 'updatedata':
-            if message.data['status'] != self.data['status']:
-                self.info("Changing status from %s to %s" % (self.data['status'], message.data['status']))
-
-                # okay, are we transitioning from paused to unpaused?
-                if message.data['status'] == 'paused':
-                    self.pauseJob()
-                if self.data['status'] == 'paused' and message.data['status'] == 'working':
-                    self.resumeJob()
-
-            status = message.data['status']
-
-            # did our status change?  if so, make sure to stop our currently running job.
-            if self.data['status'] == 'working' or self.data['status'] == 'paused':
-                if (status == 'idle' or
-                    status == 'offline' or
-                    status == 'error' or
-                        status == 'maintenance'):
-                    self.info("Stopping job.")
-                    self.stopJob()
-
-            # did we get a new config?
-            if json.dumps(message.data['driver_config']) != json.dumps(self.config):
-                self.log.info("Driver config has changed, updating.")
-                self.config = message.data['driver_config']
-                self.initializeDriver()
-
-            self.data = message.data
-        # time to die, mr bond!
-        elif message.name == 'shutdown':
-            self.shutdown()
-            pass
-
     def debug(self, msg):
-        self.log.debug("%s: %s" % (self.config['name'], msg))
+        self.log.debug("%s: %s" % (self.bot_name, msg))
 
     def info(self, msg):
-        self.log.info("%s: %s" % (self.config['name'], msg))
+        self.log.info("%s: %s" % (self.bot_name, msg))
 
     def warning(self, msg):
-        self.log.warning("%s: %s" % (self.config['name'], msg))
+        self.log.warning("%s: %s" % (self.bot_name, msg))
 
     def error(self, msg):
-        self.log.error("%s: %s" % (self.config['name'], msg))
+        self.log.error("%s: %s" % (self.bot_name, msg))
 
     def exception(self, msg):
-        self.log.exception("%s: %s" % (self.config['name'], msg))
+        self.log.exception("%s: %s" % (self.bot_name, msg))
 
-    def updateHomeBase(self, latest, temps):
+    def update_home_base(self, latest, temps):
         self.info("print: %0.2f%%" % float(latest))
         outputName = "bot-%s.jpg" % self.data['id']
 
@@ -465,9 +400,3 @@ class WorkerBee():
         except Exception as ex:
             self.exception(ex)
             return False
-
-
-class Message():
-    def __init__(self, name, data=None):
-        self.name = name
-        self.data = data
