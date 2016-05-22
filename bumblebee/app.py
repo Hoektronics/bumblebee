@@ -98,7 +98,6 @@ class BumbleBee:
             self.api.sendDeviceScanResults(data, camera_files)
 
     def get_bots(self):
-
         self.scan_devices()
 
         bot_api_result = self.api.getMyBots()
@@ -140,8 +139,8 @@ class BumbleBee:
 
     def bots_are_busy(self):
         bots_busy = False
-        for idx, link in self.workers.iteritems():
-            bot = link.bot
+        for worker in self.workers.values():
+            bot = worker.bot
             if bot['status'] != 'idle' and bot['status'] != 'offline' and bot['status'] != 'error':
                 bots_busy = True
         return bots_busy

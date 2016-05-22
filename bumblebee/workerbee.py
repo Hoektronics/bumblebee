@@ -14,16 +14,21 @@ from bumblebee import hive
 class WorkerBee:
     sleepTime = 0.5
 
-    def __init__(self, api, data):
-        self.config = data['driver_config']
-        self.bot_name = self.bot_name
+    @staticmethod
+    def start(added_event):
+        worker = WorkerBee(added_event.data)
+
+
+    def __init__(self, api, bot_data):
+        self.config = bot_data['driver_config']
+        self.bot_name = bot_data['name']
 
         # we need logging!
         self.log = logging.getLogger('botqueue')
 
         self.api = api
-        self.data = data
-        self.data_lock = threading.RLock()
+        self.bot = bot_data
+        self.bot_lock = threading.RLock()
 
         self.driver = None
         self.cacheHit = False
@@ -38,14 +43,13 @@ class WorkerBee:
         # look at our current state to check for problems.
         self.startup_check_state()
 
-
         self.thread = threading.Thread(target=self.run)
         self.thread.start()
 
     def startup_check_state(self):
         # we shouldn't startup in a working state... that implies some sort of error.
-        if self.data['status'] == 'working':
-            self.error_mode("Startup in %s mode, dropping job # %s" % (self.data['status'], self.data['job']['id']))
+        if self.bot['status'] == 'working':
+            self.error_mode("Startup in %s mode, dropping job # %s" % (self.bot['status'], self.bot['job']['id']))
 
     def error_mode(self, error):
         self.error("Error mode: %s" % error)
@@ -58,7 +62,7 @@ class WorkerBee:
 
         # take the bot offline.
         self.info("Setting bot status as error.")
-        result = self.api.updateBotInfo({'bot_id': self.data['id'], 'status': 'error', 'error_text': error})
+        result = self.api.updateBotInfo({'bot_id': self.bot['id'], 'status': 'error', 'error_text': error})
         if result['status'] == 'success':
             self.update(result['data'])
         else:
@@ -88,28 +92,38 @@ class WorkerBee:
     # this is our entry point for the worker subprocess
     def run(self):
         last_webcam_update_time = time.time()
+        last_getjob_time = time.time()
         try:
             # okay, we're off!
             self.running = True
+
+            if self.bot['status'] == 'idle':
+                self.get_new_job()
+
             while self.running:
                 # slicing means we need to slice our job.
-                if self.data['status'] == 'slicing':
-                    if self.data['job']['slicejob']['status'] == 'slicing' and self.config['can_slice']:
+                if self.bot['status'] == 'slicing':
+                    if self.bot['job']['slicejob']['status'] == 'slicing' and self.config['can_slice']:
                         self.slice_job()
                 # working means we need to process a job.
-                elif self.data['status'] == 'working':
+                elif self.bot['status'] == 'working':
                     self.process_job()
                     # self.getOurInfo() # if there was a problem with the job,
                     # we'll find it by pulling in a new bot state and looping again.
-                    self.debug("Bot finished @ state %s" % self.data['status'])
+                    self.debug("Bot finished @ state %s" % self.bot['status'])
+                # idle means we can maybe try to get a new job
+                elif self.bot['status'] == 'idle':
+                    if time.time() - last_getjob_time > 60:
+                        self.get_new_job()
+                        last_getjob_time = time.time()
 
                 # upload a webcam pic every so often.
-                if time.time() - lastWebcamUpdate > 60:
-                    outputName = "bot-%s.jpg" % self.data['id']
+                if time.time() - last_webcam_update_time > 60:
+                    outputName = "bot-%s.jpg" % self.bot['id']
                     if self.takePicture(outputName):
                         fullImgPath = hive.getImageDirectory(outputName)
-                        self.api.webcamUpdate(fullImgPath, bot_id=self.data['id'])
-                    lastWebcamUpdate = time.time()
+                        self.api.webcamUpdate(fullImgPath, bot_id=self.bot['id'])
+                    last_webcam_update_time = time.time()
 
                 time.sleep(self.sleepTime)  # sleep for a bit to not hog resources
         except Exception as ex:
@@ -123,20 +137,20 @@ class WorkerBee:
         return self.thread.is_alive()
 
     def update(self, new_data):
-        with self.data_lock:
-            if new_data['status'] != self.data['status']:
-                self.info("Changing status from %s to %s" % (self.data['status'], new_data['status']))
+        with self.bot_lock:
+            if new_data['status'] != self.bot['status']:
+                self.info("Changing status from %s to %s" % (self.bot['status'], new_data['status']))
 
                 # okay, are we transitioning from paused to unpaused?
                 if new_data['status'] == 'paused':
                     self.pause_job()
-                if self.data['status'] == 'paused' and new_data['status'] == 'working':
+                if self.bot['status'] == 'paused' and new_data['status'] == 'working':
                     self.resume_job()
 
             status = new_data['status']
 
             # did our status change?  if so, make sure to stop our currently running job.
-            if self.data['status'] == 'working' or self.data['status'] == 'paused':
+            if self.bot['status'] == 'working' or self.bot['status'] == 'paused':
                 if status in ('idle', 'offline', 'error', 'maintenance'):
                     self.info("Stopping job.")
                     self.stop_job()
@@ -147,13 +161,13 @@ class WorkerBee:
                 self.config = new_data['driver_config']
                 self.initialize_driver()
 
-            self.data = new_data
+            self.bot = new_data
 
     # get bot info from the mothership
     def get_our_info(self):
-        self.debug("Looking up bot # %s." % self.data['id'])
+        self.debug("Looking up bot # %s." % self.bot['id'])
 
-        result = self.api.getBotInfo(self.data['id'])
+        result = self.api.getBotInfo(self.bot['id'])
         if result['status'] == 'success':
             self.update(result['data'])
         else:
@@ -161,14 +175,14 @@ class WorkerBee:
             raise Exception("Error looking up bot info: %s" % result['error'])
 
     def get_new_job(self):
-        find_job_result = self.api.findNewJob(self.data['id'], self.config['can_slice'])
+        find_job_result = self.api.findNewJob(self.bot['id'], self.config['can_slice'])
         if find_job_result['status'] == 'success':
             if len(find_job_result['data']):
                 job = find_job_result['data']
-                grab_job_result = self.api.grabJob(self.data['id'], job['id'], self.config['can_slice'])
+                grab_job_result = self.api.grabJob(self.bot['id'], job['id'], self.config['can_slice'])
 
                 if grab_job_result['status'] == 'success':
-                    self.data['job'] = job
+                    self.bot['job'] = job
 
                     return True
         else:
@@ -177,30 +191,30 @@ class WorkerBee:
 
     def slice_job(self):
         # download our slice file
-        slice_file = self.download_file(self.data['job']['slicejob']['input_file'])
+        slice_file = self.download_file(self.bot['job']['slicejob']['input_file'])
 
         # create and run our slicer
-        g = ginsu.Ginsu(slice_file, self.data['job']['slicejob'])
+        g = ginsu.Ginsu(slice_file, self.bot['job']['slicejob'])
         g.slice()
 
         # watch the slicing progress
         local_update = 0
         last_update = 0
         while g.isRunning():
-            if not self.running or self.data['status'] != 'slicing':
+            if not self.running or self.bot['status'] != 'slicing':
                 self.debug("Stopping slice job")
                 g.stop()
                 return
 
             # notify the local mothership of our status.
             if time.time() - local_update > 0.5:
-                self.data['job']['progress'] = g.getProgress()
+                self.bot['job']['progress'] = g.getProgress()
                 local_update = time.time()
 
             # occasionally update home base.
             if time.time() - last_update > 15:
                 last_update = time.time()
-                self.api.updateJobProgress(self.data['job']['id'], "%0.5f" % g.getProgress())
+                self.api.updateJobProgress(self.bot['job']['id'], "%0.5f" % g.getProgress())
 
             time.sleep(self.sleepTime)
 
@@ -209,7 +223,7 @@ class WorkerBee:
 
         # move the file to the cache directory
         cache_dir = hive.getCacheDirectory()
-        base_file_name = os.path.splitext(os.path.basename(self.data['job']['slicejob']['input_file']['name']))[0]
+        base_file_name = os.path.splitext(os.path.basename(self.bot['job']['slicejob']['input_file']['name']))[0]
         md5sum = hive.md5sumfile(sushi.output_file)
         upload_file = "%s%s-%s.gcode" % (cache_dir, md5sum, base_file_name)
         self.debug("Moved slice output to %s" % upload_file)
@@ -217,7 +231,7 @@ class WorkerBee:
 
         # update our slice job progress and pull in our update info.
         self.info("Finished slicing, uploading results to main site.")
-        result = self.api.updateSliceJob(job_id=self.data['job']['slicejob']['id'], status=sushi.status,
+        result = self.api.updateSliceJob(job_id=self.bot['job']['slicejob']['id'], status=sushi.status,
                                          output=sushi.output_log, errors=sushi.error_log, filename=upload_file)
 
         # now pull in our new data.
@@ -233,7 +247,7 @@ class WorkerBee:
             while my_file.getProgress() < 100:
                 # notify the local mothership of our status.
                 if time.time() - local_update > 0.5:
-                    self.data['job']['progress'] = my_file.getProgress()
+                    self.bot['job']['progress'] = my_file.getProgress()
                     local_update = time.time()
                 time.sleep(self.sleepTime)
             # okay, we're done... send it back.
@@ -243,10 +257,10 @@ class WorkerBee:
 
     def process_job(self):
         # go get 'em, tiger!
-        self.job_file = self.download_file(self.data['job']['file'])
+        self.job_file = self.download_file(self.bot['job']['file'])
 
         # notify the mothership of download completion
-        self.api.downloadedJob(self.data['job']['id'])
+        self.api.downloadedJob(self.bot['job']['id'])
 
         local_update = 0
         last_update = 0
@@ -265,15 +279,15 @@ class WorkerBee:
                 # notify the mothership of our status.
                 if time.time() - local_update > 0.5:
                     local_update = time.time()
-                    self.data['job']['progress'] = latest
-                    self.data['job']['temperature'] = temps
+                    self.bot['job']['progress'] = latest
+                    self.bot['job']['temperature'] = temps
 
                 # did we get paused?
-                while self.data['status'] == 'paused':
+                while self.bot['status'] == 'paused':
                     time.sleep(self.sleepTime)
 
                 # should we bail out of here?
-                if not self.running or self.data['status'] != 'working':
+                if not self.running or self.bot['status'] != 'working':
                     self.stop_job()
                     return
 
@@ -288,15 +302,15 @@ class WorkerBee:
                 time.sleep(self.sleepTime)
 
             # did our print finish while running?
-            if self.running and self.data['status'] == 'working':
+            if self.running and self.bot['status'] == 'working':
                 self.info("Print finished.")
 
                 # send up a final 100% info.
-                self.data['job']['progress'] = 100.0
+                self.bot['job']['progress'] = 100.0
                 self.update_home_base(latest, temps)
 
                 # finish the job online, and mark as completed.
-                result = self.api.completeJob(self.data['job']['id'])
+                result = self.api.completeJob(self.bot['job']['id'])
                 if result['status'] == 'success':
                     self.update(result['data']['bot'])
                 else:
@@ -322,8 +336,8 @@ class WorkerBee:
     def drop_job(self, error=None):
         self.stop_job()
 
-        if len(self.data['job']) and self.data['job']['id']:
-            result = self.api.drop_job(self.data['job']['id'], error)
+        if len(self.bot['job']) and self.bot['job']['id']:
+            result = self.api.drop_job(self.bot['job']['id'], error)
             self.info("Dropping existing job.")
             if result['status'] == 'success':
                 self.get_our_info()
@@ -332,7 +346,7 @@ class WorkerBee:
 
     def shutdown(self):
         self.info("Shutting down.")
-        if self.data['status'] == 'working' and self.data['job']['id']:
+        if self.bot['status'] == 'working' and self.bot['job']['id']:
             self.drop_job(error="Shutting down.")
         self.running = False
 
@@ -353,16 +367,16 @@ class WorkerBee:
 
     def update_home_base(self, latest, temps):
         self.info("print: %0.2f%%" % float(latest))
-        outputName = "bot-%s.jpg" % self.data['id']
+        outputName = "bot-%s.jpg" % self.bot['id']
 
         if self.takePicture(outputName):
             fullImgPath = hive.getImageDirectory(outputName)
             self.api.webcamUpdate(fullImgPath,
-                                  job_id=self.data['job']['id'],
+                                  job_id=self.bot['job']['id'],
                                   progress="%0.5f" % float(latest),
                                   temps=temps)
         else:
-            self.api.updateJobProgress(self.data['job']['id'], "%0.5f" % float(latest), temps)
+            self.api.updateJobProgress(self.bot['job']['id'], "%0.5f" % float(latest), temps)
 
     def takePicture(self, filename):
         # create our command to do the webcam image grabbing
@@ -370,10 +384,10 @@ class WorkerBee:
 
             # do we even have a webcam config setup?
             if 'webcam' in self.config:
-                if self.data['status'] == 'working':
+                if self.bot['status'] == 'working':
                     watermark = "%s :: %0.2f%% :: BotQueue.com" % (
                         self.config['name'],
-                        float(self.data['job']['progress'])
+                        float(self.bot['job']['progress'])
                     )
                 else:
                     watermark = "%s :: BotQueue.com" % self.config['name']
@@ -400,3 +414,5 @@ class WorkerBee:
         except Exception as ex:
             self.exception(ex)
             return False
+
+

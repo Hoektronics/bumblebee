@@ -21,7 +21,7 @@ lib_path = hive.getEngine('Printrun', type="driver", repo="https://github.com/kl
 sys.path.append(lib_path)
 
 # Kill the error output because of warnings from printrun
-sys.stderr = open(os.devnull, 'w')
+#sys.stderr = open(os.devnull, 'w')
 from printrun import printcore
 from printrun import gcoder
 
@@ -29,7 +29,12 @@ def scanPorts():
     try:
         import serial.tools.list_ports
 
-        return list(serial.tools.list_ports.comports())
+        result = []
+        for port in serial.tools.list_ports.comports():
+            device_tuple = (port.device, '', port.hwid)
+            result.append(device_tuple)
+
+        return result
     except ImportError:
         return None
     except Exception as ex:
@@ -70,12 +75,13 @@ class printcoredriver(bumbledriver.bumbledriver):
             self.gcoder = gcoder.GCode(jobfile.localFile)
             self.p.startprint(self.gcoder)
             self.printThread = Thread(target=self.printThreadEntry).start()
-        finally:
+        except Exception:
             self.disconnect()
+            raise
 
     # this doesn't do much, just a thread to watch our thread indirectly.
     def executeFile(self):
-        while (self.p.printing):
+        while self.p.printing:
             self.printing = self.p.printing
 
             time.sleep(0.1)

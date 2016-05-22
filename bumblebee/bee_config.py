@@ -12,7 +12,11 @@ class BeeConfig:
     def __init__(self):
         self.data = {}
         self.loaded = False
+
         self.config_dir = appdirs.user_config_dir("Bumblebee", "BotQueue")
+        if not os.path.exists(self.config_dir):
+            os.makedirs(self.config_dir)
+
         self.path = self.config_dir + os.sep + "config.json"
 
         self.setup_config_file()
@@ -24,12 +28,7 @@ class BeeConfig:
         return self.data[key]
 
     def __delitem__(self, key):
-        del self.date[key]
-
-    def get(self):
-        if not self.loaded:
-            self.load()
-        return self.data
+        del self.data[key]
 
     def load(self):
         try:
@@ -77,6 +76,7 @@ class BeeConfig:
             }
             self.save()
 
+        self.load()
         self.migrate_configuration()
 
     def migrate_configuration(self):
@@ -92,7 +92,7 @@ class BeeConfig:
             self['uid'] = hashlib.sha1(str(time.time())).hexdigest()
             config_updated = True
 
-            # slicing options moved to driver config
+        # slicing options moved to driver config
         if 'can_slice' in self.data:
             del self['can_slice']
             config_updated = True

@@ -7,8 +7,6 @@ def main():
 
     command_parser = parser.add_subparsers(dest="command", help='command help')
 
-    parser_log = command_parser.add_parser('log', help='Log utilities')
-
     parser_config = command_parser.add_parser('config', help='Configuration control')
     parser_config.add_argument("--server", help="Change config to use a different server")
 

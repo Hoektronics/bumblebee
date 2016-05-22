@@ -12,9 +12,10 @@ DESCRIPTION = "BotQueue's client bumblebee"
 URL = "http://github.com/Hoektronics/bumblebee/"
 
 PACKAGES = ["bumblebee", "bumblebee.drivers"]
-PKG_DATA = {"bumblebee": ["config-dist.json", "imagesnap"]}
+PKG_DATA = {"bumblebee": ["imagesnap"]}
 DEPENDS = ["git://github.com/makerbot/pyserial#egg=pyserial"]
-REQUIRES = ["Pygments", "pyserial==2.7", "requests-oauth", "beautifulsoup4", "makerbot-driver", "appdirs"]
+REQUIRES = ["Pygments", "pyserial", "requests-oauth", "beautifulsoup4", "makerbot-driver", "appdirs",
+            "pyopenssl", "ndg-httpsclient", "pyasn1"]
 EXCLUDES = ["pydoc"]
 
 VERSIONFILE = "bumblebee/_version.py"

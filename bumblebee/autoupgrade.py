@@ -98,6 +98,10 @@ class AutoUpgrade(object):
             Returns true if later version exists.
         """
         current = self._get_current()
+        # There is no version, so don't attempt to upgrade
+        if current[-1]:
+            return False
+
         highest = self._get_highest_version()
         return highest > current 
     
@@ -117,7 +121,7 @@ class AutoUpgrade(object):
             return [-1]
         if html.getcode() != 200:
             raise PkgNotFoundError
-        soup = BeautifulSoup(html.read())
+        soup = BeautifulSoup(html.read(), "html.parser")
         versions = []
         for link in soup.find_all('a'):
             text = link.get_text()
