@@ -5,19 +5,14 @@ import time
 import threading
 
 import os
-from bumblebee import camera_control
 from bumblebee import drivers
 from bumblebee import ginsu
 from bumblebee import hive
+from bumblebee.events import CameraEvent
 
 
 class WorkerBee:
     sleepTime = 0.5
-
-    @staticmethod
-    def start(added_event):
-        worker = WorkerBee(added_event.data)
-
 
     def __init__(self, api, bot_data):
         self.config = bot_data['driver_config']
@@ -31,7 +26,6 @@ class WorkerBee:
         self.bot_lock = threading.RLock()
 
         self.driver = None
-        self.cacheHit = False
         self.running = False
         self.job_file = None
 
@@ -43,7 +37,11 @@ class WorkerBee:
         # look at our current state to check for problems.
         self.startup_check_state()
 
+        self.last_picture = None
+        CameraEvent.PictureTaken.then(self.on_picture_taken)
+
         self.thread = threading.Thread(target=self.run)
+        self.thread.daemon = True
         self.thread.start()
 
     def startup_check_state(self):
@@ -76,7 +74,6 @@ class WorkerBee:
             self.error_mode(ex)
 
     def driver_factory(self):
-
         module_name = 'bumblebee.drivers.' + self.config['driver'] + 'driver'
         __import__(module_name)
 
@@ -89,9 +86,11 @@ class WorkerBee:
         else:
             raise Exception("Unknown driver specified.")
 
+    def on_picture_taken(self, event):
+        self.last_picture = event.picture
+
     # this is our entry point for the worker subprocess
     def run(self):
-        last_webcam_update_time = time.time()
         last_getjob_time = time.time()
         try:
             # okay, we're off!
@@ -118,12 +117,8 @@ class WorkerBee:
                         last_getjob_time = time.time()
 
                 # upload a webcam pic every so often.
-                if time.time() - last_webcam_update_time > 60:
-                    outputName = "bot-%s.jpg" % self.bot['id']
-                    if self.takePicture(outputName):
-                        fullImgPath = hive.getImageDirectory(outputName)
-                        self.api.webcamUpdate(fullImgPath, bot_id=self.bot['id'])
-                    last_webcam_update_time = time.time()
+                # if self.last_picture is not None:
+                #     self.api.webcamUpdate(self.last_picture.file_path, bot_id=self.bot['id'])
 
                 time.sleep(self.sleepTime)  # sleep for a bit to not hog resources
         except Exception as ex:
@@ -367,52 +362,11 @@ class WorkerBee:
 
     def update_home_base(self, latest, temps):
         self.info("print: %0.2f%%" % float(latest))
-        outputName = "bot-%s.jpg" % self.bot['id']
 
-        if self.takePicture(outputName):
-            fullImgPath = hive.getImageDirectory(outputName)
-            self.api.webcamUpdate(fullImgPath,
+        if self.last_picture is not None:
+            self.api.webcamUpdate(self.last_picture.file_path,
                                   job_id=self.bot['job']['id'],
                                   progress="%0.5f" % float(latest),
                                   temps=temps)
         else:
             self.api.updateJobProgress(self.bot['job']['id'], "%0.5f" % float(latest), temps)
-
-    def takePicture(self, filename):
-        # create our command to do the webcam image grabbing
-        try:
-
-            # do we even have a webcam config setup?
-            if 'webcam' in self.config:
-                if self.bot['status'] == 'working':
-                    watermark = "%s :: %0.2f%% :: BotQueue.com" % (
-                        self.config['name'],
-                        float(self.bot['job']['progress'])
-                    )
-                else:
-                    watermark = "%s :: BotQueue.com" % self.config['name']
-
-                device = self.config['webcam']['device']
-
-                brightness = 50
-                if 'brightness' in self.config['webcam']:
-                    brightness = self.config['webcam']['brightness']
-
-                contrast = 50
-                if 'contrast' in self.config['webcam']:
-                    contrast = self.config['webcam']['contrast']
-                return camera_control.takePicture(device=device,
-                                                  watermark=watermark,
-                                                  output=filename,
-                                                  brightness=brightness,
-                                                  contrast=contrast)
-
-            else:
-                return False
-
-        # main try/catch block
-        except Exception as ex:
-            self.exception(ex)
-            return False
-
-

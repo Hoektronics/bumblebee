@@ -1,3 +1,4 @@
+from __future__ import print_function
 import json
 import logging
 import socket
@@ -7,7 +8,7 @@ import traceback
 from oauth_hook import OAuthHook
 import requests
 
-from bumblebee import hive
+from bumblebee.auto_deleted_file import AutoDeletedFile
 from bumblebee import _version
 
 
@@ -57,6 +58,13 @@ class BotQueueAPI:
                                        consumer_key=self.config['app']['consumer_key'],
                                        consumer_secret=self.config['app']['consumer_secret'])
 
+    @staticmethod
+    def _get_file_handle(filepath):
+        if isinstance(filepath, basestring):
+            return filepath, open(filepath, 'rb')
+        elif isinstance(filepath, AutoDeletedFile):
+            return filepath.file_path, open(filepath.file_path, 'rb')
+
     def apiCall(self, call, parameters=None, url=None, method="POST", retries=999999, filepath=None,
                 ignoreInvalid=False):
         # what url to use?
@@ -77,7 +85,7 @@ class BotQueueAPI:
         parameters['api_output'] = 'json'
 
         # Format any weird objects to strings
-        for key, value in parameters.iteritems():
+        for key, value in parameters.items():
             if isinstance(value, Exception):
                 parameters[key] = traceback.format_exc(value)
 
@@ -88,16 +96,16 @@ class BotQueueAPI:
 
                 # single file?
                 if isinstance(filepath, basestring):
-                    files = {'file': (filepath, open(filepath, 'rb'))}
+                    files = {'file': self._get_file_handle(filepath)}
                 # multiple files?
                 elif isinstance(filepath, dict):
                     files = {}
-                    for idx, val in filepath.iteritems():
-                        files[idx] = (val, open(val, 'rb'))
+                    for idx, val in filepath.items():
+                        files[idx] = self._get_file_handle(val)
                 elif isinstance(filepath, list):
                     files = {}
                     for idx, val in enumerate(filepath):
-                        files[idx] = (val, open(val, 'rb'))
+                        files[idx] = self._get_file_handle(val)
                 else:
                     files = None
 
@@ -107,7 +115,7 @@ class BotQueueAPI:
                 response = self.session.send(request.prepare(), timeout=600)
 
                 if response.status_code == 414:
-                    for key, value in parameters.iteritems():
+                    for key, value in parameters.items():
                         self.log.debug("%s: %d" % (key, len(value)))
                     raise ServerError("Request was too long for this server.")
                 # convert it to json
@@ -145,30 +153,30 @@ class BotQueueAPI:
                 # raise NetworkError(str(ex))
                 self.log.error("%s call failed: internet connection is down: %s" % (call, ex))
                 self.netError()
-                retries = retries - 1
+                retries -= 1
             except ServerError as ex:
                 self.log.error("%s call failed: %s" % (call, ex))
                 self.netError()
-                retries = retries - 1
+                retries -= 1
             # unknown exceptions... get a stacktrace for debugging.
             except ValueError as ex:
                 self.log.error("%s call failed: value error" % call)
                 self.log.exception(ex)
                 self.netError(True)
-                retries = retries - 1
+                retries -= 1
             except Exception as ex:
                 self.log.error("%s call failed: unknown API error: %s" % (call, ex))
                 self.log.error("exception: %s.%s" % (ex.__class__, ex.__class__.__name__))
                 self.log.exception(ex)
                 self.netError()
-                retries = retries - 1
+                retries -= 1
         # something bad happened.
         return False
 
     def netError(self, netStatus=False):
         self.netStatus = netStatus
         if not netStatus:
-            self.netErrors = self.netErrors + 1
+            self.netErrors += 1
         time.sleep(10)
 
     def requestToken(self):
@@ -207,10 +215,10 @@ class BotQueueAPI:
             # Step 2: Redirect to the provider. Since this is a CLI script we do not
             # redirect. In a web application you would redirect the user to the URL
             # below.
-            print
-            print "Please visit BotQueue.com or simply visit this URL to authenticate Bumblebee: %s" % \
-                  self.getAuthorizeUrl()
-            print
+            print ()
+            print("Please visit BotQueue.com or simply visit this URL to authenticate Bumblebee: %s" % \
+                  self.getAuthorizeUrl())
+            print ()
             # webbrowser.open_new(self.getAuthorizeUrl())
 
             authorized = False
@@ -241,8 +249,8 @@ class BotQueueAPI:
 
         except Exception as ex:
             self.log.exception(ex)
-            print "There was a problem authorizing the app: %s" % (ex)
-            raise RuntimeError("There was a problem authorizing the app: %s" % (ex))
+            print ("There was a problem authorizing the app: %s" % ex)
+            raise RuntimeError("There was a problem authorizing the app: %s" % ex)
 
     def listQueues(self):
         return self.apiCall('listqueues')

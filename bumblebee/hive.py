@@ -11,7 +11,6 @@ import urllib2
 from threading import Thread
 
 import os
-from bumblebee import drivers
 
 
 class URLFile():
@@ -157,19 +156,6 @@ def determineOS():
         return "win"
     else:
         return "unknown"
-
-
-def scanBots():
-    driver_names = ['printcoredriver']
-    bots = {}
-    for name in driver_names:
-        module_name = 'bumblebee.drivers.' + name
-        __import__(module_name)
-        found = getattr(drivers, name).scanPorts()
-        if found:
-            bots[name] = found
-
-    return bots
 
 
 def jsonNormalize(input):

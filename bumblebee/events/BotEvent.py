@@ -14,3 +14,9 @@ class Removed(Event):
 class Updated(Event):
     def __init__(self, bot_data):
         self.data = bot_data
+
+
+class StatusChanged(Event):
+    def __init__(self, old_status, new_status):
+        self.old_status = old_status
+        self.new_status = new_status

@@ -1,28 +1,16 @@
 class Event(object):
+    _events = {}
+
     @classmethod
     def then(cls, fn):
-        _instance.on(cls, fn)
+        if cls not in cls._events:
+            Event._events[cls] = []
+
+        Event._events[cls].append(fn)
 
     def fire(self):
-        _instance.fire(self)
-
-
-class EventManager(object):
-    def __init__(self):
-        self.events = {}
-
-    def fire(self, event):
-        cls = event.__class__
+        cls = self.__class__
         print "firing:", cls
-        if cls in self.events:
-            for fn in self.events[cls]:
-                fn(event)
-
-    def on(self, event_class, fn):
-        if event_class not in self.events:
-            self.events[event_class] = []
-
-        self.events[event_class].append(fn)
-
-
-_instance = EventManager()
+        if cls in Event._events:
+            for fn in Event._events[cls]:
+                fn(self)

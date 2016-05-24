@@ -1,36 +1,21 @@
-import json
 import logging
 import sys
 import time
 
 from bumblebee import bee_config
 from bumblebee import botqueueapi
-from bumblebee import camera_control
 from bumblebee import hive
 from bumblebee import stacktracer
 from bumblebee import workerbee
-
-try:
-    from bumblebee import autoupgrade
-
-    auto_update = True
-except ImportError:
-    auto_update = False
-    pass
+from bumblebee import camera_control
+from bumblebee.DeviceScanner import DeviceScanner
+from bumblebee.RepeatedTimer import RepeatedTimer
 
 
 class BumbleBee:
     sleepTime = 0.5
 
     def __init__(self):
-        if auto_update:
-            self.app = autoupgrade.AutoUpgrade("bqclient", "https://pypi.python.org/simple")
-        else:
-            self.app = None
-
-        self.lastScanUpdate = 0
-        self.lastBotUpdate = 0
-        self.lastUpgradeCheck = 0
         self.canUpgrade = False
         self.restart = False
         hive.loadLogger()
@@ -49,57 +34,24 @@ class BumbleBee:
 
     def main(self):
         # load up our bots and start processing them.
-        self.log.info("Started up, loading bot list.")
+        self.log.info("BumbleBee Starting")
+
+        deviceScanner = DeviceScanner()
+        updateBotsTimer = RepeatedTimer(10, self.get_bots)
+
+        camera_control.start()
 
         while not self.quit:
-            if time.time() - self.lastBotUpdate > 10:
+            time.sleep(self.sleepTime)
+
+    def update_bots(self):
                 self.get_bots()
                 if not self.bots_are_busy() and self.canUpgrade:
                     self.log.debug("Bots aren't busy, we can restart")
                     self.restart = True
                     self.handle_quit()
-                self.lastBotUpdate = time.time()
-            if time.time() - self.lastScanUpdate > 60:
-                self.scan_devices()
-                self.lastScanUpdate = time.time()
-            if time.time() - self.lastUpgradeCheck > 120:
-                self.canUpgrade = self.app is not None and self.app.check()
-                self.lastUpgradeCheck = time.time()
-
-            time.sleep(self.sleepTime)
-
-        if self.canUpgrade:
-            self.upgrade()
-
-    def scan_devices(self):
-        # look up our data
-        data = {
-            'bots': hive.scanBots(),
-            'cameras': camera_control.scanCameras()
-        }
-
-        scan_data = json.dumps(data)
-        if scan_data != self.lastScanData or (self.lastImageTime + 60 < time.time()):
-            self.lastScanData = scan_data
-
-            camera_files = []
-            if len(data['cameras']):
-                for idx, camera in enumerate(data['cameras']):
-                    outfile = camera['name'] + '.jpg'
-                    try:
-                        if camera_control.takePicture(camera['device'], watermark=None, output=outfile):
-                            self.lastImageTime = time.time()
-                            full_image_path = hive.getImageDirectory(outfile)
-                            camera_files.append(full_image_path)
-                    except Exception as ex:
-                        self.log.exception(ex)
-
-            # now update the main site
-            self.api.sendDeviceScanResults(data, camera_files)
 
     def get_bots(self):
-        self.scan_devices()
-
         bot_api_result = self.api.getMyBots()
 
         # did we get a valid response?
@@ -144,13 +96,6 @@ class BumbleBee:
             if bot['status'] != 'idle' and bot['status'] != 'offline' and bot['status'] != 'error':
                 bots_busy = True
         return bots_busy
-
-    def upgrade(self):
-        if self.canUpgrade and self.restart:
-            self.log.info("Updating...")
-            self.app.upgrade(dependencies=True)
-            self.log.info("Update complete. Restarting")
-            self.app.restart()
 
     def handle_quit(self):
         self.quit = True
