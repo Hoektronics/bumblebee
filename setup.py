@@ -27,4 +27,7 @@ setup(name="bqclient",
       entry_points={
           "console_scripts": ["bumblebee = bumblebee.__main__:main"]
       },
+      install_requires=[
+          'appdirs'
+      ]
       )
