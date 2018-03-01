@@ -1,4 +1,0 @@
-recursive-include bumblebee *.py
-recursive-include bumblebee *.json
-recursive-include bumblebee/drivers *.py
-recursive-exclude bumblebee/engines *

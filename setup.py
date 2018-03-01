@@ -1,45 +1,30 @@
-import sys
-
 import re
 
-if sys.version_info > (3,):
-    from setuptools import setup
-else:
-    from distutils.core import setup
+from setuptools import setup, find_packages
 
-NAME = "bqclient"
-DESCRIPTION = "BotQueue's client bumblebee"
-URL = "http://github.com/Hoektronics/bumblebee/"
+def get_version():
+    version_file = "bumblebee/_version.py"
+    line = open(version_file, "rt").read()
+    version_regex = r"^__version__\s*=\s*['\"]([^'\"]*)['\"]"
 
-PACKAGES = ["bumblebee", "bumblebee.drivers"]
-PKG_DATA = {"bumblebee": ["imagesnap"]}
-DEPENDS = ["git://github.com/makerbot/pyserial#egg=pyserial"]
-REQUIRES = ["Pygments", "pyserial", "requests-oauth", "beautifulsoup4", "makerbot-driver", "appdirs",
-            "pyopenssl", "ndg-httpsclient", "pyasn1"]
-EXCLUDES = ["pydoc"]
+    match_object = re.search(version_regex, line, re.MULTILINE)
 
-VERSIONFILE = "bumblebee/_version.py"
-line = open(VERSIONFILE, "rt").read()
-VSRE = r"^__version__\s*=\s*['\"]([^'\"]*)['\"]"
-mo = re.search(VSRE, line, re.M)
-if mo:
-    VERSION = mo.group(1)
-else:
-    raise RuntimeError("Unable to find version string in %s." % VERSIONFILE)
+    if match_object:
+        return match_object.group(1)
+    else:
+        raise RuntimeError("Unable to find version string in %s." % version_file)
 
-setup(name=NAME,
+
+setup(name="bqclient",
       author="Zach 'Hoeken' Smith",
       author_email="hoeken@gmail.com",
       maintainer="Justin Nesselrotte",
-      maintainer_email="jnesselr@harding.edu",
-      description=DESCRIPTION,
-      version=VERSION,
-      url=URL,
-      packages=PACKAGES,
+      maintainer_email="admin@jnesselr.org",
+      description="BotQueue's client bumblebee",
+      version=get_version(),
+      url="http://github.com/Hoektronics/bumblebee/",
+      packages=find_packages(),
       entry_points={
           "console_scripts": ["bumblebee = bumblebee.__main__:main"]
       },
-      dependency_links=DEPENDS,
-      install_requires=REQUIRES,
-      package_data=PKG_DATA
       )
