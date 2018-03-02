@@ -71,3 +71,8 @@ class BotQueueAPI(object):
         self._config.save()
         self.update_auth()
         return True
+
+    def get_bots(self):
+        response = self.__get('/host/bots')
+
+        return response.json()['data']

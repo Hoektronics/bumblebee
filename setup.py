@@ -29,6 +29,7 @@ setup(name="bqclient",
       },
       install_requires=[
           'appdirs',
-          'requests'
+          'requests',
+          'wrapt'
       ]
       )

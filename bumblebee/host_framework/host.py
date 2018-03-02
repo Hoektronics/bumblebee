@@ -1,25 +1,29 @@
-from time import sleep
+from time import sleep, time
 
 from .api import BotQueueAPI
 from .configuration import HostConfiguration
-from .events.event import event_manager
 from .events import HostEvents
 from .events import AuthFlowEvents
+from .events import BotEvents
+from .events.event import event_manager
 
 
 class Host(object):
     def __init__(self, app_dirs):
+        event_manager.bind(self)
+
         self.app_dirs = app_dirs
         self.config = HostConfiguration(self.app_dirs)
         self.api = BotQueueAPI(self.config)
-        self.event_manager = event_manager
 
     def run(self):
-        self.event_manager.fire(HostEvents.Startup)
+        HostEvents.Startup().fire()
 
         self._must_be_authenticated()
 
-        self.event_manager.fire(HostEvents.Shutdown)
+        self._update_bot_loop()
+
+        HostEvents.Shutdown().fire()
 
     def _must_be_authenticated(self):
         if self.api.is_access_valid():
@@ -51,3 +55,26 @@ class Host(object):
                 break
 
             sleep(10)
+
+    def _update_bot_loop(self):
+        last_bots_time = 0
+
+        bots = dict()
+
+        while True:
+            if time() > last_bots_time + 10:
+                last_bots_time = time()
+
+                bots_response = self.api.get_bots()
+
+                for bot in bots_response:
+                    if bot['id'] not in bots:
+                        bots[bot['id']] = bot
+                        BotEvents.BotAdded(bot).fire()
+
+                for bot_id in bots:
+                    filtered_bots = filter(lambda x: x['id'] == bot_id, bots_response)
+                    if len(filtered_bots) == 0:
+                        BotEvents.BotRemoved(bots[bot_id]).fire()
+
+            sleep(.5)
