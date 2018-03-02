@@ -3,7 +3,8 @@ import inspect
 
 
 class Event(object):
-    pass
+    def fire(self):
+        event_manager.fire(self)
 
 
 class EventBag(object):

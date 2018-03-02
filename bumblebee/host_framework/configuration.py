@@ -1,24 +1,52 @@
-import appdirs
 import json
 import os
 
 
 class Configuration(object):
-    def __init__(self):
-        self._config = {}
+    def __init__(self, app_dirs, config_type):
+        config_file_name = '{type}.json'.format(type=config_type)
+        self._config_directory = app_dirs.user_config_dir
+        self._config_path = os.path.join(self._config_directory, config_file_name)
+
+        self._config = self.__load_config()
+
+    def __load_config(self):
+        if os.path.exists(self._config_path):
+            with open(self._config_path, 'rb') as config_handle:
+                return json.load(config_handle)
+
+        return self._default_config()
+
+    def __getitem__(self, item):
+        return self._config[item]
+
+    def __setitem__(self, key, value):
+        self._config[key] = value
+
+    def __contains__(self, key):
+        return key in self._config
+
+    def __delitem__(self, key):
+        del self._config[key]
+
+    @staticmethod
+    def _default_config():
+        return {}
+
+    def save(self):
+        if not os.path.exists(self._config_directory):
+            os.makedirs(self._config_directory)
+
+        with open(self._config_path, 'wb') as config_handle:
+            json.dump(self._config, config_handle)
 
 
 class HostConfiguration(Configuration):
-    def __init__(self, app_name):
-        super(HostConfiguration, self).__init__()
-        self.app_name = app_name
-        self._config = self.__load_config(app_name)
+    def __init__(self, app_dirs):
+        super(HostConfiguration, self).__init__(app_dirs, 'host')
 
     @staticmethod
-    def __load_config(app_name):
-        config_directory = appdirs.user_config_dir(app_name)
-        host_config_path = os.path.join(config_directory, 'host.json')
-
-        if os.path.exists(host_config_path):
-            with open(host_config_path, 'rb') as host_config_handle:
-                return json.dump(host_config_handle)
+    def _default_config():
+        return {
+            'server': 'https://botqueue.com/'
+        }
