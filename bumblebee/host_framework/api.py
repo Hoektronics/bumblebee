@@ -6,7 +6,6 @@ class BotQueueAPI(object):
     def __init__(self, config):
         self._config = config
         self._session = Session()
-        self._session.verify = False
         self.__access_token = None
         self.update_auth()
 
