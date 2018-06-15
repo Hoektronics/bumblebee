@@ -1,4 +1,4 @@
-from event import Event, EventBag
+from bumblebee.host_framework.events.event import Event, EventBag
 
 
 class AuthFlowEvents(EventBag):

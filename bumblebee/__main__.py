@@ -1,6 +1,6 @@
 from threading import Thread
 
-from .bqclient import BQClient
+from bumblebee.bqclient import BQClient
 
 bq_client = BQClient()
 

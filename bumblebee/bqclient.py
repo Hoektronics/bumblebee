@@ -1,11 +1,9 @@
-from __future__ import print_function
-
 from appdirs import AppDirs
 
-from .host_framework import Host
-from .host_framework import on
-from .host_framework.events import HostEvents
-from .host_framework.events import BotEvents
+from bumblebee.host_framework import Host
+from bumblebee.host_framework import on
+from bumblebee.host_framework.events import HostEvents
+from bumblebee.host_framework.events import BotEvents
 
 
 class BQClient(Host):

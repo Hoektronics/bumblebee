@@ -1,6 +1,4 @@
-import functools
 import inspect
-import wrapt
 
 
 class Event(object):

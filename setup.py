@@ -2,6 +2,7 @@ import re
 
 from setuptools import setup, find_packages
 
+
 def get_version():
     version_file = "bumblebee/_version.py"
     line = open(version_file, "rt").read()
@@ -30,6 +31,5 @@ setup(name="bqclient",
       install_requires=[
           'appdirs',
           'requests',
-          'wrapt'
       ]
       )

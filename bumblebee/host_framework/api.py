@@ -1,5 +1,5 @@
 from requests import Session
-from urlparse import urljoin
+from urllib.parse import urljoin
 
 
 class BotQueueAPI(object):
