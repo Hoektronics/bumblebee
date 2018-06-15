@@ -4,14 +4,16 @@ from bumblebee.host import Host
 from bumblebee.host import on
 from bumblebee.host.events import HostEvents
 from bumblebee.host.events import BotEvents
+from bumblebee.host.framework import resolver
 
 
 class BQClient(Host):
     app_name = 'BQClient'
     app_dirs = AppDirs(app_name)
+    resolver.instance(app_dirs)
 
     def __init__(self):
-        super(BQClient, self).__init__(self.app_dirs)
+        super(BQClient, self).__init__()
 
     @on(HostEvents.Startup)
     def _start(self):

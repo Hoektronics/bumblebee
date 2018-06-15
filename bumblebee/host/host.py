@@ -10,11 +10,10 @@ from bumblebee.host.framework.events import EventManager
 
 
 class Host(object):
-    def __init__(self, app_dirs):
+    def __init__(self):
         resolver(EventManager).bind(self)
 
-        self.app_dirs = app_dirs
-        self.config = HostConfiguration(self.app_dirs)
+        self.config = HostConfiguration()
         self.api = BotQueueAPI(self.config)
 
     def run(self):
