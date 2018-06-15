@@ -5,6 +5,15 @@ class FailureToBindException(Exception):
     pass
 
 
+def singleton(resolver):
+    def _singleton(cls):
+        resolver.singleton(cls)
+
+        return cls
+
+    return _singleton
+
+
 class Resolver(object):
     def __init__(self):
         self._bindings = {}

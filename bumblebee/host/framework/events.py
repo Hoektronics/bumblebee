@@ -1,9 +1,11 @@
 import inspect
 
+from bumblebee.host.framework import resolver
+
 
 class Event(object):
     def fire(self):
-        event_manager.fire(self)
+        resolver(EventManager).fire(self)
 
 
 class EventBag(object):
@@ -26,7 +28,13 @@ class EventManager(object):
             for listener in self._listeners[event.__class__]:
                 argspec = inspect.getfullargspec(listener)
 
-                if len(argspec.args) == 0:
+                args_length = len(argspec.args)
+
+                # If it's a method, the first parameter is self
+                if inspect.ismethod(listener):
+                    args_length = args_length - 1
+
+                if args_length == 0:
                     listener()
                 else:
                     listener(event)
@@ -44,6 +52,11 @@ class EventManager(object):
             if not hasattr(obj_attribute, '__func__'):
                 continue
 
+            # This attribute is already bound, probably a class method
+            if obj_attribute in self._unbound_methods:
+                for event_class in self._unbound_methods[obj_attribute]:
+                    self.on(event_class, obj_attribute)
+
             unbound_function = getattr(obj_attribute, '__func__')
 
             if unbound_function in self._unbound_methods:
@@ -51,12 +64,9 @@ class EventManager(object):
                     self.on(event_class, obj_attribute)
 
 
-event_manager = EventManager()
-
-
 def on(event_class):
     def _on(unbound_method):
-        event_manager.add_unbound_method(event_class, unbound_method)
+        resolver(EventManager).add_unbound_method(event_class, unbound_method)
 
         return unbound_method
     return _on

@@ -5,12 +5,13 @@ from bumblebee.host.configurations import HostConfiguration
 from bumblebee.host.events import HostEvents
 from bumblebee.host.events import AuthFlowEvents
 from bumblebee.host.events import BotEvents
-from bumblebee.host.framework.events import event_manager
+from bumblebee.host.framework import resolver
+from bumblebee.host.framework.events import EventManager
 
 
 class Host(object):
     def __init__(self, app_dirs):
-        event_manager.bind(self)
+        resolver(EventManager).bind(self)
 
         self.app_dirs = app_dirs
         self.config = HostConfiguration(self.app_dirs)

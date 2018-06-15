@@ -1,6 +1,7 @@
 import pytest
 
-from bumblebee.host.framework.ioc import Resolver, FailureToBindException
+import bumblebee.host.framework
+from bumblebee.host.framework.ioc import Resolver, FailureToBindException, singleton
 
 
 class NoArgumentFakeClass(object):
@@ -122,3 +123,20 @@ def test_cannot_resolve_unannotated_parameters():
 
     with pytest.raises(FailureToBindException):
         resolver(UnannotatedFakeClass)
+
+
+def test_using_singleton_annotation():
+    resolver = Resolver()
+
+    @singleton(resolver)
+    class SingletonClass(object):
+        pass
+
+    fake_class_first_time = resolver(SingletonClass)
+
+    assert isinstance(fake_class_first_time, SingletonClass)
+
+    fake_class_second_time = resolver(SingletonClass)
+
+    assert isinstance(fake_class_second_time, SingletonClass)
+    assert fake_class_second_time is fake_class_first_time
