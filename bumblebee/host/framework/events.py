@@ -28,9 +28,9 @@ class EventManager(object):
     def fire(self, event):
         if event.__class__ in self._listeners:
             for listener in self._listeners[event.__class__]:
-                argspec = inspect.getfullargspec(listener)
+                arg_spec = inspect.getfullargspec(listener)
 
-                args_length = len(argspec.args)
+                args_length = len(arg_spec.args)
 
                 # If it's a method, the first parameter is self
                 if inspect.ismethod(listener):
