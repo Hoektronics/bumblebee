@@ -71,6 +71,21 @@ def test_can_resolve_singleton_function():
     assert fake_class_second_time is fake_class_first_time
 
 
+def test_can_resolve_singleton_given_only_class():
+    resolver = Resolver()
+
+    resolver.singleton(NoArgumentFakeClass)
+
+    fake_class_first_time = resolver(NoArgumentFakeClass)
+
+    assert isinstance(fake_class_first_time, NoArgumentFakeClass)
+
+    fake_class_second_time = resolver(NoArgumentFakeClass)
+
+    assert isinstance(fake_class_second_time, NoArgumentFakeClass)
+    assert fake_class_second_time is fake_class_first_time
+
+
 def test_can_resolve_implicitly_bound_class():
     resolver = Resolver()
 

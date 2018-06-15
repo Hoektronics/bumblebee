@@ -54,13 +54,16 @@ class Resolver(object):
 
         self._bindings[cls] = _internal
 
-    def singleton(self, cls, resolving_function):
+    def singleton(self, cls, resolving_function=None):
         def _internal():
             if not hasattr(_internal, 'singletons'):
                 _internal.singletons = {}
 
             if cls not in _internal.singletons:
-                _internal.singletons[cls] = resolving_function()
+                if resolving_function is None:
+                    _internal.singletons[cls] = self._make(cls)
+                else:
+                    _internal.singletons[cls] = resolving_function()
 
             return _internal.singletons[cls]
 
