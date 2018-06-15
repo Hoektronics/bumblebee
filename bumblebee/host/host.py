@@ -1,11 +1,11 @@
 from time import sleep, time
 
-from bumblebee.host_framework.api import BotQueueAPI
-from bumblebee.host_framework.configuration import HostConfiguration
-from bumblebee.host_framework.events import HostEvents
-from bumblebee.host_framework.events import AuthFlowEvents
-from bumblebee.host_framework.events import BotEvents
-from bumblebee.host_framework.events.event import event_manager
+from bumblebee.host.api import BotQueueAPI
+from bumblebee.host.configurations import HostConfiguration
+from bumblebee.host.events import HostEvents
+from bumblebee.host.events import AuthFlowEvents
+from bumblebee.host.events import BotEvents
+from bumblebee.host.framework.events import event_manager
 
 
 class Host(object):

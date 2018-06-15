@@ -39,14 +39,3 @@ class Configuration(object):
 
         with open(self._config_path, 'wb') as config_handle:
             json.dump(self._config, config_handle)
-
-
-class HostConfiguration(Configuration):
-    def __init__(self, app_dirs):
-        super(HostConfiguration, self).__init__(app_dirs, 'host')
-
-    @staticmethod
-    def _default_config():
-        return {
-            'server': 'https://botqueue.com/'
-        }

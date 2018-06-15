@@ -1,4 +1,4 @@
-from bumblebee.host_framework.events.event import EventBag, Event, EventManager
+from bumblebee.host.framework.events import EventBag, Event, EventManager
 
 
 class FakeEvents(EventBag):
@@ -22,6 +22,7 @@ def test_firing_an_event_with_no_data_calls_bound_method_without_arguments():
     event_manager.fire(event)
 
     assert method_called
+
 
 def test_firing_an_event_with_no_data_calls_bound_method_with_event_argument():
     method_called = False

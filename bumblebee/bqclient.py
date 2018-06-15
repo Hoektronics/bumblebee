@@ -1,9 +1,9 @@
 from appdirs import AppDirs
 
-from bumblebee.host_framework import Host
-from bumblebee.host_framework import on
-from bumblebee.host_framework.events import HostEvents
-from bumblebee.host_framework.events import BotEvents
+from bumblebee.host import Host
+from bumblebee.host import on
+from bumblebee.host.events import HostEvents
+from bumblebee.host.events import BotEvents
 
 
 class BQClient(Host):
