@@ -1,9 +1,15 @@
 import json
 import os
 
+from appdirs import AppDirs
+
+from bumblebee.host.framework import resolver
+
 
 class Configuration(object):
-    def __init__(self, app_dirs, config_type):
+    def __init__(self, config_type):
+        app_dirs = resolver(AppDirs)
+
         config_file_name = '{type}.json'.format(type=config_type)
         self._config_directory = app_dirs.user_config_dir
         self._config_path = os.path.join(self._config_directory, config_file_name)
@@ -34,8 +40,7 @@ class Configuration(object):
         return {}
 
     def save(self):
-        if not os.path.exists(self._config_directory):
-            os.makedirs(self._config_directory)
+        os.makedirs(self._config_directory, exist_ok=True)
 
-        with open(self._config_path, 'wb') as config_handle:
+        with open(self._config_path, 'w') as config_handle:
             json.dump(self._config, config_handle)
