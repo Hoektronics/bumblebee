@@ -28,6 +28,9 @@ setup(name="bqclient",
       entry_points={
           "console_scripts": ["bumblebee = bumblebee.__main__:main"]
       },
+      setup_requires=[
+          "pytest-runner"
+      ],
       install_requires=[
           'appdirs',
           'requests',

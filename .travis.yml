@@ -1,0 +1,15 @@
+language: python
+python:
+  - "3.6"
+cache: pip
+
+notifications:
+  email:
+    - jnesselr@harding.edu
+
+branches:
+  only:
+    - v2.0-dev
+
+install:
+  - python setup.py test
