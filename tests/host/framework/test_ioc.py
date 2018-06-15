@@ -30,6 +30,19 @@ def test_can_resolve_given_instance():
     assert fake_class is instance
 
 
+def test_can_resolve_given_only_instance():
+    resolver = Resolver()
+
+    instance = NoArgumentFakeClass()
+
+    resolver.instance(instance)
+
+    fake_class = resolver(NoArgumentFakeClass)
+
+    assert isinstance(fake_class, NoArgumentFakeClass)
+    assert fake_class is instance
+
+
 def test_can_resolve_explicitly_bound_class():
     resolver = Resolver()
 

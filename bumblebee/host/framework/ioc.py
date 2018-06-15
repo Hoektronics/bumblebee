@@ -37,7 +37,12 @@ class Resolver(object):
 
         return cls()
 
-    def instance(self, cls, instance):
+    def instance(self, cls, instance=None):
+        if instance is None:
+            if hasattr(cls, '__class__'):
+                instance = cls
+                cls = instance.__class__
+
         def _internal():
             return instance
 
