@@ -1,3 +1,4 @@
+from bumblebee.host.framework import resolver
 from bumblebee.host.framework.events import EventBag, Event, EventManager, on
 
 
@@ -88,30 +89,49 @@ def test_binding_method_with_class_method():
     assert TestObject.callback_called
 
 
-# def test_using_on_events():
-#     class FakeClassWithEvents(object):
-#         class_method_called = False
-#         def __init__(self):
-#             self.instance_method_called = False
-#
-#         @on(FakeEvents.EventWithoutData)
-#         def instance_method(self):
-#             self.instance_method_called = True
-#
-#         @classmethod
-#         @on(FakeEvents.EventWithoutData)
-#         def class_method(cls):
-#             cls.class_method_called = True
-#
-#     test_object = FakeClassWithEvents()
-#
-#     event_manager = EventManager()
-#     event_manager.bind(test_object)
-#
-#     assert not test_object.instance_method_called
-#     assert not test_object.class_method_called
-#
-#     event_manager.fire(FakeEvents.EventWithoutData())
-#
-#     assert test_object.instance_method_called
-#     assert test_object.class_method_called
+def test_using_on_events():
+    class FakeClassWithEvents(object):
+        class_method_called = False
+
+        def __init__(self):
+            self.instance_method_called = False
+
+        @on(FakeEvents.EventWithoutData)
+        def instance_method(self):
+            self.instance_method_called = True
+
+        @classmethod
+        @on(FakeEvents.EventWithoutData)
+        def class_method(cls):
+            cls.class_method_called = True
+
+    test_object = FakeClassWithEvents()
+
+    event_manager = resolver(EventManager)
+    event_manager.bind(test_object)
+
+    assert not test_object.instance_method_called
+    assert not test_object.class_method_called
+
+    event_manager.fire(FakeEvents.EventWithoutData())
+
+    assert test_object.instance_method_called
+    assert test_object.class_method_called
+
+
+def test_using_fire_on_event():
+    event = FakeEvents.EventWithoutData()
+    method_called = False
+
+    def bound_method():
+        nonlocal method_called
+        method_called = True
+
+    event_manager = resolver(EventManager)
+    event_manager.on(FakeEvents.EventWithoutData, bound_method)
+
+    assert not method_called
+
+    event.fire()
+
+    assert method_called

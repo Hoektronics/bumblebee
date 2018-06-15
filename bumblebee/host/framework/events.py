@@ -1,6 +1,7 @@
 import inspect
 
 from bumblebee.host.framework import resolver
+from bumblebee.host.framework.ioc import singleton
 
 
 class Event(object):
@@ -12,6 +13,7 @@ class EventBag(object):
     pass
 
 
+@singleton(resolver)
 class EventManager(object):
     def __init__(self):
         self._listeners = {}
