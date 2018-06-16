@@ -72,3 +72,18 @@ def on(event_class):
 
         return unbound_method
     return _on
+
+
+def bind_events(event_class):
+    def _internal_init(*args, **kwargs):
+        instance = event_class(*args, **kwargs)
+
+        resolver(EventManager).bind(instance)
+
+        return instance
+
+    # When the resolver sees this function, we want it to use the parameters from
+    # the __init__ of the class we're annotating as opposed to *args and **kwargs
+    _internal_init.__init__ = event_class.__init__
+
+    return _internal_init

@@ -1,5 +1,5 @@
 from bumblebee.host.framework import resolver
-from bumblebee.host.framework.events import EventBag, Event, EventManager, on
+from bumblebee.host.framework.events import EventBag, Event, EventManager, on, bind_events
 
 
 class FakeEvents(EventBag):
@@ -135,3 +135,47 @@ def test_using_fire_on_event():
     event.fire()
 
     assert method_called
+
+
+def test_using_auto_binding_for_event_listener_classes():
+    @bind_events
+    class FakeClassWithEvents(object):
+        def __init__(self):
+            self.method_called = False
+
+        @on(FakeEvents.EventWithoutData)
+        def instance_method(self):
+            self.method_called = True
+
+    test_object = FakeClassWithEvents()
+
+    assert not test_object.method_called
+
+    FakeEvents.EventWithoutData().fire()
+
+    assert test_object.method_called
+
+
+def test_using_auto_binding_with_resolved_class():
+    class AnnotatedClass(object):
+        pass
+
+    @bind_events
+    class FakeClassWithEvents(object):
+        def __init__(self, foo: AnnotatedClass):
+            self.method_called = False
+            self.foo = foo
+
+        @on(FakeEvents.EventWithoutData)
+        def instance_method(self):
+            self.method_called = True
+
+    test_object = resolver(FakeClassWithEvents)
+
+    assert isinstance(test_object.foo, AnnotatedClass)
+
+    assert not test_object.method_called
+
+    FakeEvents.EventWithoutData().fire()
+
+    assert test_object.method_called
