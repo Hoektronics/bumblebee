@@ -1,9 +1,11 @@
 from requests import Session
 from urllib.parse import urljoin
 
+from bumblebee.host.configurations import HostConfiguration
+
 
 class BotQueueAPI(object):
-    def __init__(self, config):
+    def __init__(self, config: HostConfiguration):
         self._config = config
         self._session = Session()
         self.__access_token = None

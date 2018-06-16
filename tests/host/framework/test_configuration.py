@@ -4,8 +4,8 @@ from unittest.mock import Mock
 
 from appdirs import AppDirs
 
-from bumblebee.host import Configuration
 from bumblebee.host.framework import resolver
+from bumblebee.host.framework.configuration import Configuration
 
 
 def test_can_work_with_keys():
