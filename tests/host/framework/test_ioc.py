@@ -1,6 +1,5 @@
 import pytest
 
-import bumblebee.host.framework
 from bumblebee.host.framework.ioc import Resolver, FailureToBindException, singleton
 
 

@@ -65,15 +65,16 @@ class Resolver(object):
 
     def singleton(self, cls, resolving_function=None):
         def _internal():
-            if not hasattr(_internal, 'singletons'):
-                _internal.singletons = {}
+            # instance is set on the _internal function as opposed to a class level dictionary
+            # so that if we ever re-bind or clear the binding of a singleton class, the existing
+            # instance is automatically cleared
 
-            if cls not in _internal.singletons:
+            if not hasattr(_internal, 'instance'):
                 if resolving_function is None:
-                    _internal.singletons[cls] = self._make(cls)
+                    _internal.instance = self._make(cls)
                 else:
-                    _internal.singletons[cls] = resolving_function()
+                    _internal.instance = resolving_function()
 
-            return _internal.singletons[cls]
+            return _internal.instance
 
         self._bindings[cls] = _internal
