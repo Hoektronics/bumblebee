@@ -17,125 +17,117 @@ class UnannotatedFakeClass(object):
         self.foo = foo
 
 
-def test_can_resolve_given_instance():
-    resolver = Resolver()
+class TestIocResolver(object):
+    def test_can_resolve_given_instance(self):
+        resolver = Resolver()
 
-    instance = NoArgumentFakeClass()
+        instance = NoArgumentFakeClass()
 
-    resolver.instance(NoArgumentFakeClass, instance)
+        resolver.instance(NoArgumentFakeClass, instance)
 
-    fake_class = resolver(NoArgumentFakeClass)
+        fake_class = resolver(NoArgumentFakeClass)
 
-    assert isinstance(fake_class, NoArgumentFakeClass)
-    assert fake_class is instance
+        assert isinstance(fake_class, NoArgumentFakeClass)
+        assert fake_class is instance
 
+    def test_can_resolve_given_only_instance(self):
+        resolver = Resolver()
 
-def test_can_resolve_given_only_instance():
-    resolver = Resolver()
+        instance = NoArgumentFakeClass()
 
-    instance = NoArgumentFakeClass()
+        resolver.instance(instance)
 
-    resolver.instance(instance)
+        fake_class = resolver(NoArgumentFakeClass)
 
-    fake_class = resolver(NoArgumentFakeClass)
+        assert isinstance(fake_class, NoArgumentFakeClass)
+        assert fake_class is instance
 
-    assert isinstance(fake_class, NoArgumentFakeClass)
-    assert fake_class is instance
+    def test_can_resolve_explicitly_bound_class(self):
+        resolver = Resolver()
 
+        resolver.bind(NoArgumentFakeClass)
 
-def test_can_resolve_explicitly_bound_class():
-    resolver = Resolver()
+        fake_class = resolver(NoArgumentFakeClass)
 
-    resolver.bind(NoArgumentFakeClass)
+        assert isinstance(fake_class, NoArgumentFakeClass)
 
-    fake_class = resolver(NoArgumentFakeClass)
+    def test_can_resolve_singleton_function(self):
+        resolver = Resolver()
 
-    assert isinstance(fake_class, NoArgumentFakeClass)
+        def resolve_instance():
+            return NoArgumentFakeClass()
 
+        resolver.singleton(NoArgumentFakeClass, resolve_instance)
 
-def test_can_resolve_singleton_function():
-    resolver = Resolver()
+        fake_class_first_time = resolver(NoArgumentFakeClass)
 
-    def resolve_instance():
-        return NoArgumentFakeClass()
+        assert isinstance(fake_class_first_time, NoArgumentFakeClass)
 
-    resolver.singleton(NoArgumentFakeClass, resolve_instance)
+        fake_class_second_time = resolver(NoArgumentFakeClass)
 
-    fake_class_first_time = resolver(NoArgumentFakeClass)
+        assert isinstance(fake_class_second_time, NoArgumentFakeClass)
+        assert fake_class_second_time is fake_class_first_time
 
-    assert isinstance(fake_class_first_time, NoArgumentFakeClass)
+    def test_can_resolve_singleton_given_only_class(self):
+        resolver = Resolver()
 
-    fake_class_second_time = resolver(NoArgumentFakeClass)
+        resolver.singleton(NoArgumentFakeClass)
 
-    assert isinstance(fake_class_second_time, NoArgumentFakeClass)
-    assert fake_class_second_time is fake_class_first_time
+        fake_class_first_time = resolver(NoArgumentFakeClass)
 
+        assert isinstance(fake_class_first_time, NoArgumentFakeClass)
 
-def test_can_resolve_singleton_given_only_class():
-    resolver = Resolver()
+        fake_class_second_time = resolver(NoArgumentFakeClass)
 
-    resolver.singleton(NoArgumentFakeClass)
+        assert isinstance(fake_class_second_time, NoArgumentFakeClass)
+        assert fake_class_second_time is fake_class_first_time
 
-    fake_class_first_time = resolver(NoArgumentFakeClass)
+    def test_can_resolve_implicitly_bound_class(self):
+        resolver = Resolver()
 
-    assert isinstance(fake_class_first_time, NoArgumentFakeClass)
+        fake_class = resolver(NoArgumentFakeClass)
 
-    fake_class_second_time = resolver(NoArgumentFakeClass)
+        assert isinstance(fake_class, NoArgumentFakeClass)
 
-    assert isinstance(fake_class_second_time, NoArgumentFakeClass)
-    assert fake_class_second_time is fake_class_first_time
+    def test_can_resolve_chain_of_classes_based_on_type_hinting(self):
+        resolver = Resolver()
 
+        fake_class: OneArgumentFakeClass = resolver(OneArgumentFakeClass)
 
-def test_can_resolve_implicitly_bound_class():
-    resolver = Resolver()
+        assert isinstance(fake_class, OneArgumentFakeClass)
+        assert isinstance(fake_class.foo, NoArgumentFakeClass)
 
-    fake_class = resolver(NoArgumentFakeClass)
+    def test_can_resolve_chain_using_instance(self):
+        resolver = Resolver()
 
-    assert isinstance(fake_class, NoArgumentFakeClass)
+        instance = NoArgumentFakeClass()
 
+        resolver.instance(NoArgumentFakeClass, instance)
 
-def test_can_resolve_chain_of_classes_based_on_type_hinting():
-    resolver = Resolver()
+        fake_class: OneArgumentFakeClass = resolver(OneArgumentFakeClass)
 
-    fake_class: OneArgumentFakeClass = resolver(OneArgumentFakeClass)
+        assert isinstance(fake_class, OneArgumentFakeClass)
+        assert isinstance(fake_class.foo, NoArgumentFakeClass)
+        assert fake_class.foo is instance
 
-    assert isinstance(fake_class, OneArgumentFakeClass)
-    assert isinstance(fake_class.foo, NoArgumentFakeClass)
+    def test_cannot_resolve_unannotated_parameters(self):
+        resolver = Resolver()
 
+        with pytest.raises(FailureToBindException):
+            resolver(UnannotatedFakeClass)
 
-def test_can_resolve_chain_using_instance():
-    resolver = Resolver()
+    def test_using_singleton_annotation(self):
+        resolver = Resolver()
 
-    instance = NoArgumentFakeClass()
+        @singleton(resolver)
+        class SingletonClass(object):
+            pass
 
-    resolver.instance(NoArgumentFakeClass, instance)
+        fake_class_first_time = resolver(SingletonClass)
 
-    fake_class: OneArgumentFakeClass = resolver(OneArgumentFakeClass)
+        assert isinstance(fake_class_first_time, SingletonClass)
 
-    assert isinstance(fake_class, OneArgumentFakeClass)
-    assert isinstance(fake_class.foo, NoArgumentFakeClass)
-    assert fake_class.foo is instance
+        fake_class_second_time = resolver(SingletonClass)
 
-
-def test_cannot_resolve_unannotated_parameters():
-    resolver = Resolver()
-
-    with pytest.raises(FailureToBindException):
-        resolver(UnannotatedFakeClass)
-
-
-def test_using_singleton_annotation():
-    resolver = Resolver()
-
-    @singleton(resolver)
-    class SingletonClass(object):
-        pass
-
-    fake_class_first_time = resolver(SingletonClass)
-
-    assert isinstance(fake_class_first_time, SingletonClass)
-
-    fake_class_second_time = resolver(SingletonClass)
-
-    assert isinstance(fake_class_second_time, SingletonClass)
-    assert fake_class_second_time is fake_class_first_time
+        assert isinstance(fake_class_second_time, SingletonClass)
+        assert fake_class_second_time is fake_class_first_time
