@@ -78,3 +78,7 @@ class Resolver(object):
             return _internal.instance
 
         self._bindings[cls] = _internal
+
+    def clear(self, cls):
+        if cls in self._bindings:
+            del self._bindings[cls]
