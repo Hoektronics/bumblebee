@@ -44,7 +44,7 @@ class TestConfiguration(object):
         assert "key" in config_second
         assert config_second["key"] == "value"
 
-    def test_will_make_diretory_if_non_existent(self):
+    def test_will_make_directory_if_non_existent(self):
         app_mock = Mock(AppDirs)
 
         resolver.instance(AppDirs, app_mock)
