@@ -15,6 +15,8 @@ def singleton(resolver):
 
 
 class Resolver(object):
+    resolver_instance = None
+
     def __init__(self):
         self._bindings = {}
 
@@ -86,3 +88,14 @@ class Resolver(object):
 
         elif cls in self._bindings:
             del self._bindings[cls]
+
+    @classmethod
+    def get(cls):
+        if cls.resolver_instance is None:
+            cls.resolver_instance = Resolver()
+
+        return cls.resolver_instance
+
+    @classmethod
+    def reset(cls):
+        cls.resolver_instance = None

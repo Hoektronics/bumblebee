@@ -206,3 +206,22 @@ class TestIocResolver(object):
 
         assert isinstance(fake_class_second_time, NoArgumentFakeClass)
         assert fake_class_second_time is not fake_class_first_time
+
+    def test_getting_the_resolver_instance(self):
+        first = Resolver.get()
+
+        second = Resolver.get()
+
+        assert isinstance(first, Resolver)
+        assert first is second
+
+    def test_resetting_the_reoslver_instance(self):
+        first = Resolver.get()
+
+        Resolver.reset()
+
+        second = Resolver.get()
+
+        assert isinstance(first, Resolver)
+        assert isinstance(second, Resolver)
+        assert first is not second
