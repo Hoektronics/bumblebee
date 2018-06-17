@@ -79,6 +79,10 @@ class Resolver(object):
 
         self._bindings[cls] = _internal
 
-    def clear(self, cls):
-        if cls in self._bindings:
+    def clear(self, cls=None):
+        if cls is None:
+            for key in list(self._bindings.keys()):
+                del self._bindings[key]
+
+        elif cls in self._bindings:
             del self._bindings[cls]

@@ -171,3 +171,38 @@ class TestIocResolver(object):
         resolver = Resolver()
 
         resolver.clear(NoArgumentFakeClass)
+
+    def test_resetting_the_resolver_clears_bound_instances(self):
+        resolver = Resolver()
+
+        instance = NoArgumentFakeClass()
+
+        resolver.instance(NoArgumentFakeClass, instance)
+
+        fake_class = resolver(NoArgumentFakeClass)
+
+        assert isinstance(fake_class, NoArgumentFakeClass)
+        assert fake_class is instance
+
+        resolver.clear()
+
+        fake_class = resolver(NoArgumentFakeClass)
+
+        assert isinstance(fake_class, NoArgumentFakeClass)
+        assert fake_class is not instance
+
+    def test_resetting_the_resolver_clears_singleton_instance(self):
+        resolver = Resolver()
+
+        resolver.singleton(NoArgumentFakeClass)
+
+        fake_class_first_time = resolver(NoArgumentFakeClass)
+
+        assert isinstance(fake_class_first_time, NoArgumentFakeClass)
+
+        resolver.clear()
+
+        fake_class_second_time = resolver(NoArgumentFakeClass)
+
+        assert isinstance(fake_class_second_time, NoArgumentFakeClass)
+        assert fake_class_second_time is not fake_class_first_time
