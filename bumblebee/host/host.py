@@ -5,13 +5,14 @@ from bumblebee.host.configurations import HostConfiguration
 from bumblebee.host.events import AuthFlowEvents
 from bumblebee.host.events import BotEvents
 from bumblebee.host.events import HostEvents
-from bumblebee.host.framework import resolver
 from bumblebee.host.framework.events import bind_events
+from bumblebee.host.framework.ioc import Resolver
 
 
 @bind_events
 class Host(object):
     def __init__(self):
+        resolver = Resolver.get()
         self.config = resolver(HostConfiguration)
         self.api = resolver(BotQueueAPI)
 

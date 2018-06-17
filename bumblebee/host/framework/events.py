@@ -1,11 +1,11 @@
 import inspect
 
-from bumblebee.host.framework import resolver
-from bumblebee.host.framework.ioc import singleton
+from bumblebee.host.framework.ioc import singleton, Resolver
 
 
 class Event(object):
     def fire(self):
+        resolver = Resolver.get()
         resolver(EventManager).fire(self)
 
 
@@ -13,7 +13,7 @@ class EventBag(object):
     pass
 
 
-@singleton(resolver)
+@singleton
 class EventManager(object):
     def __init__(self):
         self._listeners = {}
@@ -68,6 +68,8 @@ class EventManager(object):
 
 def on(event_class):
     def _on(unbound_method):
+
+        resolver = Resolver.get()
         resolver(EventManager).add_unbound_method(event_class, unbound_method)
 
         return unbound_method
@@ -78,6 +80,7 @@ def bind_events(event_class):
     def _internal_init(*args, **kwargs):
         instance = event_class(*args, **kwargs)
 
+        resolver = Resolver.get()
         resolver(EventManager).bind(instance)
 
         return instance

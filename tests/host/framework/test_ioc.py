@@ -18,9 +18,7 @@ class UnannotatedFakeClass(object):
 
 
 class TestIocResolver(object):
-    def test_can_resolve_given_instance(self):
-        resolver = Resolver()
-
+    def test_can_resolve_given_instance(self, resolver):
         instance = NoArgumentFakeClass()
 
         resolver.instance(NoArgumentFakeClass, instance)
@@ -30,9 +28,7 @@ class TestIocResolver(object):
         assert isinstance(fake_class, NoArgumentFakeClass)
         assert fake_class is instance
 
-    def test_can_resolve_given_only_instance(self):
-        resolver = Resolver()
-
+    def test_can_resolve_given_only_instance(self, resolver):
         instance = NoArgumentFakeClass()
 
         resolver.instance(instance)
@@ -42,7 +38,7 @@ class TestIocResolver(object):
         assert isinstance(fake_class, NoArgumentFakeClass)
         assert fake_class is instance
 
-    def test_can_resolve_explicitly_bound_class(self):
+    def test_can_resolve_explicitly_bound_class(self, resolver):
         resolver = Resolver()
 
         resolver.bind(NoArgumentFakeClass)
@@ -51,9 +47,7 @@ class TestIocResolver(object):
 
         assert isinstance(fake_class, NoArgumentFakeClass)
 
-    def test_can_resolve_singleton_function(self):
-        resolver = Resolver()
-
+    def test_can_resolve_singleton_function(self, resolver):
         def resolve_instance():
             return NoArgumentFakeClass()
 
@@ -68,9 +62,7 @@ class TestIocResolver(object):
         assert isinstance(fake_class_second_time, NoArgumentFakeClass)
         assert fake_class_second_time is fake_class_first_time
 
-    def test_can_resolve_singleton_given_only_class(self):
-        resolver = Resolver()
-
+    def test_can_resolve_singleton_given_only_class(self, resolver):
         resolver.singleton(NoArgumentFakeClass)
 
         fake_class_first_time = resolver(NoArgumentFakeClass)
@@ -82,24 +74,18 @@ class TestIocResolver(object):
         assert isinstance(fake_class_second_time, NoArgumentFakeClass)
         assert fake_class_second_time is fake_class_first_time
 
-    def test_can_resolve_implicitly_bound_class(self):
-        resolver = Resolver()
-
+    def test_can_resolve_implicitly_bound_class(self, resolver):
         fake_class = resolver(NoArgumentFakeClass)
 
         assert isinstance(fake_class, NoArgumentFakeClass)
 
-    def test_can_resolve_chain_of_classes_based_on_type_hinting(self):
-        resolver = Resolver()
-
+    def test_can_resolve_chain_of_classes_based_on_type_hinting(self, resolver):
         fake_class: OneArgumentFakeClass = resolver(OneArgumentFakeClass)
 
         assert isinstance(fake_class, OneArgumentFakeClass)
         assert isinstance(fake_class.foo, NoArgumentFakeClass)
 
-    def test_can_resolve_chain_using_instance(self):
-        resolver = Resolver()
-
+    def test_can_resolve_chain_using_instance(self, resolver):
         instance = NoArgumentFakeClass()
 
         resolver.instance(NoArgumentFakeClass, instance)
@@ -110,16 +96,12 @@ class TestIocResolver(object):
         assert isinstance(fake_class.foo, NoArgumentFakeClass)
         assert fake_class.foo is instance
 
-    def test_cannot_resolve_unannotated_parameters(self):
-        resolver = Resolver()
-
+    def test_cannot_resolve_unannotated_parameters(self, resolver):
         with pytest.raises(FailureToBindException):
             resolver(UnannotatedFakeClass)
 
-    def test_using_singleton_annotation(self):
-        resolver = Resolver()
-
-        @singleton(resolver)
+    def test_using_singleton_annotation(self, resolver):
+        @singleton
         class SingletonClass(object):
             pass
 
@@ -132,9 +114,7 @@ class TestIocResolver(object):
         assert isinstance(fake_class_second_time, SingletonClass)
         assert fake_class_second_time is fake_class_first_time
 
-    def test_clearing_the_resolver_clears_bound_instances(self):
-        resolver = Resolver()
-
+    def test_clearing_the_resolver_clears_bound_instances(self, resolver):
         instance = NoArgumentFakeClass()
 
         resolver.instance(NoArgumentFakeClass, instance)
@@ -151,9 +131,7 @@ class TestIocResolver(object):
         assert isinstance(fake_class, NoArgumentFakeClass)
         assert fake_class is not instance
 
-    def test_clearing_the_resolver_clears_singleton_instance(self):
-        resolver = Resolver()
-
+    def test_clearing_the_resolver_clears_singleton_instance(self, resolver):
         resolver.singleton(NoArgumentFakeClass)
 
         fake_class_first_time = resolver(NoArgumentFakeClass)
@@ -167,14 +145,10 @@ class TestIocResolver(object):
         assert isinstance(fake_class_second_time, NoArgumentFakeClass)
         assert fake_class_second_time is not fake_class_first_time
 
-    def test_clearing_a_class_that_was_not_bound_works(self):
-        resolver = Resolver()
-
+    def test_clearing_a_class_that_was_not_bound_works(self, resolver):
         resolver.clear(NoArgumentFakeClass)
 
-    def test_resetting_the_resolver_clears_bound_instances(self):
-        resolver = Resolver()
-
+    def test_resetting_the_resolver_clears_bound_instances(self, resolver):
         instance = NoArgumentFakeClass()
 
         resolver.instance(NoArgumentFakeClass, instance)
@@ -191,9 +165,7 @@ class TestIocResolver(object):
         assert isinstance(fake_class, NoArgumentFakeClass)
         assert fake_class is not instance
 
-    def test_resetting_the_resolver_clears_singleton_instance(self):
-        resolver = Resolver()
-
+    def test_resetting_the_resolver_clears_singleton_instance(self, resolver):
         resolver.singleton(NoArgumentFakeClass)
 
         fake_class_first_time = resolver(NoArgumentFakeClass)
@@ -215,7 +187,7 @@ class TestIocResolver(object):
         assert isinstance(first, Resolver)
         assert first is second
 
-    def test_resetting_the_reoslver_instance(self):
+    def test_resetting_the_resolver_instance(self):
         first = Resolver.get()
 
         Resolver.reset()

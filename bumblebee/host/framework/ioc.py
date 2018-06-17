@@ -5,17 +5,15 @@ class FailureToBindException(Exception):
     pass
 
 
-def singleton(resolver):
-    def _singleton(cls):
-        resolver.singleton(cls)
+def singleton(cls):
+    Resolver.get().singleton(cls)
 
-        return cls
-
-    return _singleton
+    return cls
 
 
 class Resolver(object):
-    resolver_instance = None
+    _resolver_instance = None
+    _singletons_decorated = []
 
     def __init__(self):
         self._bindings = {}
@@ -91,11 +89,11 @@ class Resolver(object):
 
     @classmethod
     def get(cls):
-        if cls.resolver_instance is None:
-            cls.resolver_instance = Resolver()
+        if cls._resolver_instance is None:
+            cls._resolver_instance = Resolver()
 
-        return cls.resolver_instance
+        return cls._resolver_instance
 
     @classmethod
     def reset(cls):
-        cls.resolver_instance = None
+        cls._resolver_instance = None

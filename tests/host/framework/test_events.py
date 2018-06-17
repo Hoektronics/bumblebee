@@ -1,4 +1,3 @@
-from bumblebee.host.framework import resolver
 from bumblebee.host.framework.events import EventBag, Event, EventManager, on, bind_events
 
 
@@ -86,7 +85,7 @@ class TestEvents(object):
         assert test_object.callback_called
         assert TestObject.callback_called
 
-    def test_using_on_events(self):
+    def test_using_on_events(self, resolver):
         class FakeClassWithEvents(object):
             class_method_called = False
 
@@ -115,7 +114,7 @@ class TestEvents(object):
         assert test_object.instance_method_called
         assert test_object.class_method_called
 
-    def test_using_fire_on_event(self):
+    def test_using_fire_on_event(self, resolver):
         event = FakeEvents.EventWithoutData()
         method_called = False
 
@@ -150,7 +149,7 @@ class TestEvents(object):
 
         assert test_object.method_called
 
-    def test_using_auto_binding_with_resolved_class(self):
+    def test_using_auto_binding_with_resolved_class(self, resolver):
         class AnnotatedClass(object):
             pass
 

@@ -3,11 +3,12 @@ import os
 
 from appdirs import AppDirs
 
-from bumblebee.host.framework import resolver
+from bumblebee.host.framework.ioc import Resolver
 
 
 class Configuration(object):
     def __init__(self, config_type):
+        resolver = Resolver.get()
         app_dirs = resolver(AppDirs)
 
         config_file_name = '{type}.json'.format(type=config_type)

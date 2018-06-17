@@ -4,12 +4,11 @@ from unittest.mock import Mock
 
 from appdirs import AppDirs
 
-from bumblebee.host.framework import resolver
 from bumblebee.host.framework.configuration import Configuration
 
 
 class TestConfiguration(object):
-    def test_can_work_with_keys(self):
+    def test_can_work_with_keys(self, resolver):
         app_mock = Mock(AppDirs)
 
         resolver.instance(AppDirs, app_mock)
@@ -28,7 +27,7 @@ class TestConfiguration(object):
 
         assert "key" not in config
 
-    def test_can_save_configuration(self):
+    def test_can_save_configuration(self, resolver):
         app_mock = Mock(AppDirs)
 
         resolver.instance(AppDirs, app_mock)
@@ -44,7 +43,7 @@ class TestConfiguration(object):
         assert "key" in config_second
         assert config_second["key"] == "value"
 
-    def test_will_make_directory_if_non_existent(self):
+    def test_will_make_directory_if_non_existent(self, resolver):
         app_mock = Mock(AppDirs)
 
         resolver.instance(AppDirs, app_mock)
