@@ -6,14 +6,14 @@ class FailureToBindException(Exception):
 
 
 def singleton(cls):
-    Resolver.get().singleton(cls)
+    Resolver._singleton_annotation(cls)
 
     return cls
 
 
 class Resolver(object):
     _resolver_instance = None
-    _singletons_decorated = []
+    _annotated_singletons = []
 
     def __init__(self):
         self._bindings = {}
@@ -21,7 +21,10 @@ class Resolver(object):
     def __call__(self, cls):
         # Implicit binding
         if cls not in self._bindings:
-            self.bind(cls)
+            if cls in self._annotated_singletons:
+                self.singleton(cls)
+            else:
+                self.bind(cls)
 
         return self._bindings[cls]()
 
@@ -62,6 +65,10 @@ class Resolver(object):
             return self._make(cls)
 
         self._bindings[cls] = _internal
+
+    @classmethod
+    def _singleton_annotation(cls, singleton_cls):
+        cls._annotated_singletons.append(singleton_cls)
 
     def singleton(self, cls, resolving_function=None):
         def _internal():

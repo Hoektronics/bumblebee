@@ -197,3 +197,46 @@ class TestIocResolver(object):
         assert isinstance(first, Resolver)
         assert isinstance(second, Resolver)
         assert first is not second
+
+    def test_resetting_keeps_decorated_singletons_as_singletons(self):
+        resolver = Resolver.get()
+
+        @singleton
+        class SingletonClass(object):
+            pass
+
+        first = resolver(SingletonClass)
+        second = resolver(SingletonClass)
+
+        assert first is second
+
+        Resolver.reset()
+
+        resolver = Resolver.get()
+
+        first = resolver(SingletonClass)
+        second = resolver(SingletonClass)
+
+        assert first is second
+
+    def test_resetting_does_not_keep_undecorated_singletons(self):
+        resolver = Resolver.get()
+
+        class SingletonClass(object):
+            pass
+
+        resolver.singleton(SingletonClass)
+
+        first = resolver(SingletonClass)
+        second = resolver(SingletonClass)
+
+        assert first is second
+
+        Resolver.reset()
+
+        resolver = Resolver.get()
+
+        first = resolver(SingletonClass)
+        second = resolver(SingletonClass)
+
+        assert first is not second
