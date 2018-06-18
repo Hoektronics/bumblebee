@@ -1,5 +1,6 @@
 import json
 import os
+from threading import Lock
 
 from appdirs import AppDirs
 
@@ -16,6 +17,7 @@ class Configuration(object):
         self._config_path = os.path.join(self._config_directory, config_file_name)
 
         self._config = self.__load_config()
+        self._lock = Lock()
 
     def __load_config(self):
         if os.path.exists(self._config_path):
@@ -25,22 +27,27 @@ class Configuration(object):
         return self._default_config()
 
     def __getitem__(self, item):
-        return self._config[item]
+        with self._lock:
+            return self._config[item]
 
     def __setitem__(self, key, value):
-        self._config[key] = value
+        with self._lock:
+            self._config[key] = value
+            self._save()
 
     def __contains__(self, key):
         return key in self._config
 
     def __delitem__(self, key):
-        del self._config[key]
+        with self._lock:
+            del self._config[key]
+            self._save()
 
     @staticmethod
     def _default_config():
         return {}
 
-    def save(self):
+    def _save(self):
         os.makedirs(self._config_directory, exist_ok=True)
 
         with open(self._config_path, 'w') as config_handle:

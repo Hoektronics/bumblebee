@@ -45,7 +45,7 @@ class BotQueueAPI(object):
 
         host_request_id = json_response['data']['id']
         self._config["host_request_id"] = host_request_id
-        self._config.save()
+        # self._config.save()
 
         return json_response['data']
 
@@ -69,7 +69,7 @@ class BotQueueAPI(object):
         if "host" not in self._config:
             self._config['host'] = []
         self._config['host']['access_token'] = response.json()['access_token']
-        self._config.save()
+        # self._config.save()
         self.update_auth()
         return True
 

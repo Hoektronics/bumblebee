@@ -27,7 +27,7 @@ class TestConfiguration(object):
 
         assert "key" not in config
 
-    def test_can_save_configuration(self, resolver):
+    def test_configuration_auto_saves_on_set(self, resolver):
         app_mock = Mock(AppDirs)
 
         resolver.instance(AppDirs, app_mock)
@@ -37,11 +37,26 @@ class TestConfiguration(object):
 
         assert "key" not in config_first
         config_first["key"] = "value"
-        config_first.save()
 
         config_second = Configuration("test")
         assert "key" in config_second
         assert config_second["key"] == "value"
+
+    def test_configuration_auto_saves_on_delete(self, resolver):
+        app_mock = Mock(AppDirs)
+
+        resolver.instance(AppDirs, app_mock)
+        app_mock.user_config_dir = tempfile.mkdtemp()
+
+        config_first = Configuration("test")
+
+        assert "key" not in config_first
+        config_first["key"] = "value"
+
+        del config_first["key"]
+
+        config_second = Configuration("test")
+        assert "key" not in config_second
 
     def test_will_make_directory_if_non_existent(self, resolver):
         app_mock = Mock(AppDirs)
@@ -53,7 +68,6 @@ class TestConfiguration(object):
 
         assert "key" not in config_first
         config_first["key"] = "value"
-        config_first.save()
 
         config_second = Configuration("test")
         assert "key" in config_second

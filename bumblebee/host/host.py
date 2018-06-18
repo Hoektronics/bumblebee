@@ -47,7 +47,7 @@ class Host(object):
                 if "host_request_id" in self.config:
                     del self.config["host_request_id"]
 
-                self.config.save()
+                # self.config.save()
 
                 AuthFlowEvents.HostMade(host_data['host']).fire()
 
