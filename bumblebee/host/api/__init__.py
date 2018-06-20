@@ -45,7 +45,6 @@ class BotQueueAPI(object):
 
         host_request_id = json_response['data']['id']
         self._config["host_request_id"] = host_request_id
-        # self._config.save()
 
         return json_response['data']
 
