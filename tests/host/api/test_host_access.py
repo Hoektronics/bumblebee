@@ -18,7 +18,13 @@ class TestHostAccess(object):
         ok_mock = PropertyMock(return_value=True)
         type(response).ok = ok_mock
         response.json.return_value = {
-            "access_token": "my_token"
+            "access_token": "my_token",
+            "data": {
+                "host": {
+                    "id": 1,
+                    "name": "Test Host"
+                }
+            }
         }
 
         api = MagicMock(BotQueueApi)
@@ -36,4 +42,7 @@ class TestHostAccess(object):
 
         assert "access_token" in config
         assert config["access_token"] == "my_token"
+        assert config["id"] == 1
+        assert config["name"] == "Test Host"
+
         assert "host_request_id" not in config
