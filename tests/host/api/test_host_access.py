@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock
 
 from bumblebee.host.api.botqueue import BotQueueApi
 from bumblebee.host.api.host_access import HostAccess
@@ -6,20 +6,13 @@ from bumblebee.host.configurations import HostConfiguration
 
 
 class TestHostAccess(object):
-    def test_accepting_host_request(self, resolver):
-        config = MagicMock(HostConfiguration)
+    def test_accepting_host_request(self, resolver, dictionary_magic):
+        config = dictionary_magic(MagicMock(HostConfiguration))
         resolver.instance(HostConfiguration, config)
 
-        config_data = {
-            "host_request_id": "request_id"
-        }
+        config["host_request_id"] = "request_id"
 
-        config.__getitem__.side_effect = config_data.__getitem__
-        config.__contains__.side_effect = config_data.__contains__
-        config.__setitem__.side_effect = config_data.__setitem__
-        config.__delitem__.side_effect = config_data.__delitem__
-
-        api = Mock(BotQueueApi)
+        api = MagicMock(BotQueueApi)
         api.post.return_value = {
             "access_token": "my_token"
         }
