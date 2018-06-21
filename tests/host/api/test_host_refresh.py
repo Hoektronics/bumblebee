@@ -1,6 +1,7 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, PropertyMock
 
 import pytest
+from requests import Response
 
 from bumblebee.host.api.botqueue import BotQueueApi
 from bumblebee.host.api.host_refresh import HostRefresh, AccessTokenNotFound
@@ -23,16 +24,25 @@ class TestHostRefresh(object):
 
         config["access_token"] = "fake_access_token"
 
-        api = MagicMock(BotQueueApi)
-        api.with_token.return_value = api
-        api.post.return_value = {
+        response = MagicMock(Response)
+
+        ok_mock = PropertyMock(return_value=True)
+        type(response).ok = ok_mock
+        response.json.return_value = {
             "access_token": "my_new_token"
         }
+
+        api = MagicMock(BotQueueApi)
+        api.with_token.return_value = api
+        api.post.return_value = response
         resolver.instance(api)
 
         host_refresh = resolver(HostRefresh)
 
         host_refresh()
+
+        ok_mock.assert_called()
+        response.json.assert_called()
 
         api.with_token.assert_called_once()
         api.post.assert_called_with("/host/refresh")

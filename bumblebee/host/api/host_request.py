@@ -12,6 +12,7 @@ class HostRequest(object):
     def __call__(self):
         response = self.api.post("/host/requests")
 
-        request_id = response["data"]["id"]
-
-        self.config["host_request_id"] = request_id
+        if response.ok:
+            json = response.json()
+            request_id = json["data"]["id"]
+            self.config["host_request_id"] = request_id

@@ -1,3 +1,5 @@
+from requests import Response
+
 from bumblebee.host.api.botqueue import BotQueueApi
 from bumblebee.host.configurations import HostConfiguration
 
@@ -17,6 +19,8 @@ class HostRefresh(object):
         if "access_token" not in self.config:
             raise AccessTokenNotFound("Access token not found in host configuration")
 
-        result = self.api.with_token().post("/host/refresh")
+        response: Response = self.api.with_token().post("/host/refresh")
 
-        self.config["access_token"] = result["access_token"]
+        if response.ok:
+            json = response.json()
+            self.config["access_token"] = json["access_token"]
