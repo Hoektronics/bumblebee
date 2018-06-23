@@ -17,6 +17,11 @@ class UnannotatedFakeClass(object):
         self.foo = foo
 
 
+class ClassWithResolver(object):
+    def __init__(self, resolver: Resolver):
+        self.resolver = resolver
+
+
 class TestIocResolver(object):
     def test_can_resolve_given_instance(self, resolver):
         instance = NoArgumentFakeClass()
@@ -178,6 +183,11 @@ class TestIocResolver(object):
 
         assert isinstance(fake_class_second_time, NoArgumentFakeClass)
         assert fake_class_second_time is not fake_class_first_time
+
+    def test_resolver_resolves_to_itself(self, resolver):
+        class_with_resolver: ClassWithResolver = resolver(ClassWithResolver)
+
+        assert class_with_resolver.resolver is resolver
 
     def test_getting_the_resolver_instance(self):
         first = Resolver.get()

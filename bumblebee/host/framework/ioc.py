@@ -18,6 +18,8 @@ class Resolver(object):
     def __init__(self):
         self._bindings = {}
 
+        self.instance(self)
+
     def __call__(self, cls):
         # Implicit binding
         if cls not in self._bindings:
