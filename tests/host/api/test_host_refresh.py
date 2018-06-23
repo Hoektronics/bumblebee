@@ -1,23 +1,13 @@
 from unittest.mock import MagicMock, PropertyMock
 
-import pytest
 from requests import Response
 
 from bumblebee.host.api.botqueue import BotQueueApi
-from bumblebee.host.api.host_refresh import HostRefresh, AccessTokenNotFound
+from bumblebee.host.api.host_refresh import HostRefresh
 from bumblebee.host.configurations import HostConfiguration
 
 
 class TestHostRefresh(object):
-    def test_host_cannot_be_refreshed_if_no_access_token_is_available(self, resolver):
-        config = MagicMock(HostConfiguration)
-        resolver.instance(config)
-
-        host_refresh = resolver(HostRefresh)
-
-        with pytest.raises(AccessTokenNotFound):
-            host_refresh()
-
     def test_host_calls_refresh_endpoint_with_token(self, resolver, dictionary_magic):
         config = dictionary_magic(MagicMock(HostConfiguration))
         resolver.instance(config)
