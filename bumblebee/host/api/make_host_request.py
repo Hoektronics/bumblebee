@@ -3,7 +3,7 @@ from bumblebee.host.configurations import HostConfiguration
 from bumblebee.host.events import AuthFlowEvents
 
 
-class HostRequest(object):
+class MakeHostRequest(object):
     def __init__(self,
                  config: HostConfiguration,
                  api: BotQueueApi):

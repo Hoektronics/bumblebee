@@ -3,12 +3,12 @@ from unittest.mock import MagicMock, PropertyMock
 from requests import Response
 
 from bumblebee.host.api.botqueue import BotQueueApi
-from bumblebee.host.api.host_request import HostRequest
+from bumblebee.host.api.make_host_request import MakeHostRequest
 from bumblebee.host.configurations import HostConfiguration
 from bumblebee.host.events import AuthFlowEvents
 
 
-class TestHostRequest(object):
+class TestMakeHostRequest(object):
     def test_host_request_sets_host_request_id(self, resolver, dictionary_magic, fakes_events):
         fakes_events.fake(AuthFlowEvents.HostRequestMade)
 
@@ -29,9 +29,9 @@ class TestHostRequest(object):
         api.post.return_value = response
         resolver.instance(api)
 
-        host_request = resolver(HostRequest)
+        make_host_request = resolver(MakeHostRequest)
 
-        host_request()
+        make_host_request()
 
         api.post.assert_called_with("/host/requests")
 
