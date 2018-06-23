@@ -2,6 +2,7 @@ from requests import Response
 
 from bumblebee.host.api.botqueue import BotQueueApi
 from bumblebee.host.configurations import HostConfiguration
+from bumblebee.host.events import AuthFlowEvents
 
 
 class HostAccess(object):
@@ -23,3 +24,5 @@ class HostAccess(object):
             self.config["name"] = json["data"]["host"]["name"]
 
             del self.config["host_request_id"]
+
+            AuthFlowEvents.HostMade(json['data']['host']).fire()

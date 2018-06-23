@@ -5,10 +5,13 @@ from requests import Response
 from bumblebee.host.api.botqueue import BotQueueApi
 from bumblebee.host.api.host_request import HostRequest
 from bumblebee.host.configurations import HostConfiguration
+from bumblebee.host.events import AuthFlowEvents
 
 
 class TestHostRequest(object):
-    def test_host_request_sets_host_request_id(self, resolver, dictionary_magic):
+    def test_host_request_sets_host_request_id(self, resolver, dictionary_magic, fakes_events):
+        fakes_events.fake(AuthFlowEvents.HostRequestMade)
+
         config = dictionary_magic(MagicMock(HostConfiguration))
         resolver.instance(HostConfiguration, config)
 
@@ -37,3 +40,4 @@ class TestHostRequest(object):
 
         assert "host_request_id" in config
         assert config["host_request_id"] == "request_id"
+        assert fakes_events.fired(AuthFlowEvents.HostRequestMade)

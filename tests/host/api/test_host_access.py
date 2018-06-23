@@ -4,10 +4,13 @@ from requests import Response
 from bumblebee.host.api.botqueue import BotQueueApi
 from bumblebee.host.api.host_access import HostAccess
 from bumblebee.host.configurations import HostConfiguration
+from bumblebee.host.events import AuthFlowEvents
 
 
 class TestHostAccess(object):
-    def test_accepting_host_request(self, resolver, dictionary_magic):
+    def test_accepting_host_request(self, resolver, dictionary_magic, fakes_events):
+        fakes_events.fake(AuthFlowEvents.HostMade)
+
         config = dictionary_magic(MagicMock(HostConfiguration))
         resolver.instance(HostConfiguration, config)
 
@@ -46,3 +49,5 @@ class TestHostAccess(object):
         assert config["name"] == "Test Host"
 
         assert "host_request_id" not in config
+
+        assert fakes_events.fired(AuthFlowEvents.HostMade)

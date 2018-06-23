@@ -6,7 +6,8 @@ from bumblebee.host.framework.ioc import singleton, Resolver
 class Event(object):
     def fire(self):
         resolver = Resolver.get()
-        resolver(EventManager).fire(self)
+        event_manager = resolver(EventManager)
+        event_manager.fire(self)
 
 
 class EventBag(object):
