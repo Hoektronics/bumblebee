@@ -34,7 +34,11 @@ class TestBotQueueApi(object):
         assert "Authorization" in new_api._headers
         assert new_api._headers["Authorization"] == "Bearer token"
 
-    def test_get_sends_headers(self, resolver):
+    def test_get_sends_headers(self, resolver, dictionary_magic):
+        config = dictionary_magic(MagicMock(HostConfiguration))
+        resolver.instance(config)
+        config["server"] = "https://server/"
+
         api: BotQueueApi = resolver(BotQueueApi)
 
         api._headers["Authorization"] = "Bearer token"
@@ -51,11 +55,15 @@ class TestBotQueueApi(object):
 
             actual = api.get("/foo/bar")
 
-            get.assert_called_with("/foo/bar", headers={"Authorization": "Bearer token"})
+            get.assert_called_with("https://server/foo/bar", headers={"Authorization": "Bearer token"})
 
             assert actual is response
 
-    def test_post_sends_headers(self, resolver):
+    def test_post_sends_headers(self, resolver, dictionary_magic):
+        config = dictionary_magic(MagicMock(HostConfiguration))
+        resolver.instance(config)
+        config["server"] = "https://server/"
+
         api: BotQueueApi = resolver(BotQueueApi)
 
         api._headers["Authorization"] = "Bearer token"
@@ -72,11 +80,15 @@ class TestBotQueueApi(object):
 
             actual = api.post("/foo/bar")
 
-            post.assert_called_with("/foo/bar", json={}, headers={"Authorization": "Bearer token"})
+            post.assert_called_with("https://server/foo/bar", json={}, headers={"Authorization": "Bearer token"})
 
             assert actual is response
 
-    def test_post_sends_data(self, resolver):
+    def test_post_sends_data(self, resolver, dictionary_magic):
+        config = dictionary_magic(MagicMock(HostConfiguration))
+        resolver.instance(config)
+        config["server"] = "https://server/"
+
         api: BotQueueApi = resolver(BotQueueApi)
 
         response = MagicMock(Response)
@@ -91,6 +103,6 @@ class TestBotQueueApi(object):
 
             actual = api.post("/foo/bar", {"key": "value"})
 
-            post.assert_called_with("/foo/bar", json={"key": "value"}, headers={})
+            post.assert_called_with("https://server/foo/bar", json={"key": "value"}, headers={})
 
             assert actual is response

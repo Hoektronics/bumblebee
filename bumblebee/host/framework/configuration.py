@@ -18,6 +18,7 @@ class Configuration(object):
 
         self._config = self.__load_config()
         self._lock = Lock()
+        self._save()
 
     def __load_config(self):
         if os.path.exists(self._config_path):

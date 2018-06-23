@@ -1,3 +1,5 @@
+from urllib.parse import urljoin
+
 import requests
 
 from bumblebee.host.configurations import HostConfiguration
@@ -9,19 +11,20 @@ class AccessTokenNotFound(Exception):
 
 
 class BotQueueApi(object):
-    def __init__(self):
+    def __init__(self,
+                 config: HostConfiguration):
         self._headers = {}
+        self.config = config
 
     def with_token(self):
         resolver = Resolver.get()
-        config = resolver(HostConfiguration)
 
-        if "access_token" not in config:
+        if "access_token" not in self.config:
             raise AccessTokenNotFound("Access token not found in host configuration")
 
-        access_token = config["access_token"]
+        access_token = self.config["access_token"]
 
-        botqueue_api = BotQueueApi()
+        botqueue_api = BotQueueApi(self.config)
         botqueue_api._headers = self._headers.copy()
 
         botqueue_api._headers["Authorization"] = f"Bearer {access_token}"
@@ -29,9 +32,11 @@ class BotQueueApi(object):
         return botqueue_api
 
     def get(self, url):
-        return requests.get(url, headers=self._headers)
+        full_url = urljoin(self.config["server"], url)
+        return requests.get(full_url, headers=self._headers)
 
     def post(self, url, data=None):
         json = data if data is not None else {}
 
-        return requests.post(url, json=json, headers=self._headers)
+        full_url = urljoin(self.config["server"], url)
+        return requests.post(full_url, json=json, headers=self._headers)
