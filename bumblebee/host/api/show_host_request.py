@@ -12,8 +12,8 @@ class ShowHostRequest(object):
         self.api = api
 
     def __call__(self):
-        host_request_id = self.config["host_request_id"]
-        response: Response = self.api.get(f"/host/requests/{host_request_id}")
+        request_id = self.config["host_request_id"]
+        response: Response = self.api.get(f"/host/requests/{request_id}")
 
         if response.ok:
             json = response.json()

@@ -10,7 +10,7 @@ from bumblebee.host.configurations import HostConfiguration
 class TestShowHostRequest(object):
     def test_showing_host_request(self, resolver, dictionary_magic, fakes_events):
         config = dictionary_magic(MagicMock(HostConfiguration))
-        resolver.instance(HostConfiguration, config)
+        resolver.instance(config)
 
         config["host_request_id"] = "request_id"
 

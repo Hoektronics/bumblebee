@@ -11,7 +11,7 @@ from bumblebee.host.configurations import HostConfiguration
 class TestHostRefresh(object):
     def test_host_cannot_be_refreshed_if_no_access_token_is_available(self, resolver):
         config = MagicMock(HostConfiguration)
-        resolver.instance(HostConfiguration, config)
+        resolver.instance(config)
 
         host_refresh = resolver(HostRefresh)
 
@@ -20,7 +20,7 @@ class TestHostRefresh(object):
 
     def test_host_calls_refresh_endpoint_with_token(self, resolver, dictionary_magic):
         config = dictionary_magic(MagicMock(HostConfiguration))
-        resolver.instance(HostConfiguration, config)
+        resolver.instance(config)
 
         config["access_token"] = "fake_access_token"
 

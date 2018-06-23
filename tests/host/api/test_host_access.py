@@ -12,7 +12,7 @@ class TestHostAccess(object):
         fakes_events.fake(AuthFlowEvents.HostMade)
 
         config = dictionary_magic(MagicMock(HostConfiguration))
-        resolver.instance(HostConfiguration, config)
+        resolver.instance(config)
 
         config["host_request_id"] = "request_id"
 
