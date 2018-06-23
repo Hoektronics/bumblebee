@@ -21,8 +21,8 @@ class TestHostAccess(object):
         ok_mock = PropertyMock(return_value=True)
         type(response).ok = ok_mock
         response.json.return_value = {
-            "access_token": "my_token",
             "data": {
+                "access_token": "my_token",
                 "host": {
                     "id": 1,
                     "name": "Test Host"

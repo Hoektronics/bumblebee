@@ -19,7 +19,7 @@ class HostAccess(object):
 
         if response.ok:
             json = response.json()
-            self.config["access_token"] = json["access_token"]
+            self.config["access_token"] = json["data"]["access_token"]
             self.config["id"] = json["data"]["host"]["id"]
             self.config["name"] = json["data"]["host"]["name"]
 
