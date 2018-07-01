@@ -14,39 +14,57 @@ class EventBag(object):
     pass
 
 
+class EventCallbackWrapper(object):
+    def __init__(self, callback, event_spec):
+        self.callback = callback
+        self.event_spec = event_spec
+
+    @property
+    def event_class(self):
+        if inspect.isclass(self.event_spec):
+            return self.event_spec
+        else:
+            return self.event_spec.__class__
+
+    def __call__(self, event: Event):
+        arg_spec = inspect.getfullargspec(self.callback)
+
+        args_length = len(arg_spec.args)
+
+        # If it's a method, the first parameter is self
+        if inspect.ismethod(self.callback):
+            args_length = args_length - 1
+
+        if args_length == 0:
+            self.callback()
+        else:
+            self.callback(event)
+
 @singleton
 class EventManager(object):
     def __init__(self):
         self._listeners = {}
         self._unbound_methods = {}
 
-    def on(self, event_class, callback):
+    def on(self, event_spec, callback):
+        wrapper = EventCallbackWrapper(callback, event_spec)
+        event_class = wrapper.event_class
+
         if event_class not in self._listeners:
             self._listeners[event_class] = []
 
-        self._listeners[event_class].append(callback)
+        self._listeners[event_class].append(wrapper)
 
     def fire(self, event):
         if event.__class__ in self._listeners:
             for listener in self._listeners[event.__class__]:
-                arg_spec = inspect.getfullargspec(listener)
+                listener(event)
 
-                args_length = len(arg_spec.args)
-
-                # If it's a method, the first parameter is self
-                if inspect.ismethod(listener):
-                    args_length = args_length - 1
-
-                if args_length == 0:
-                    listener()
-                else:
-                    listener(event)
-
-    def add_unbound_method(self, event_class, unbound_method):
+    def add_unbound_method(self, event_spec, unbound_method):
         if unbound_method not in self._unbound_methods:
             self._unbound_methods[unbound_method] = []
 
-        self._unbound_methods[unbound_method].append(event_class)
+        self._unbound_methods[unbound_method].append(event_spec)
 
     def bind(self, obj):
         for obj_attribute_name in dir(obj):
@@ -57,21 +75,21 @@ class EventManager(object):
 
             # This attribute is already bound, probably a class method
             if obj_attribute in self._unbound_methods:
-                for event_class in self._unbound_methods[obj_attribute]:
-                    self.on(event_class, obj_attribute)
+                for event_spec in self._unbound_methods[obj_attribute]:
+                    self.on(event_spec, obj_attribute)
 
             unbound_function = getattr(obj_attribute, '__func__')
 
             if unbound_function in self._unbound_methods:
-                for event_class in self._unbound_methods[unbound_function]:
-                    self.on(event_class, obj_attribute)
+                for event_spec in self._unbound_methods[unbound_function]:
+                    self.on(event_spec, obj_attribute)
 
 
-def on(event_class):
+def on(event_spec):
     def _on(unbound_method):
 
         resolver = Resolver.get()
-        resolver(EventManager).add_unbound_method(event_class, unbound_method)
+        resolver(EventManager).add_unbound_method(event_spec, unbound_method)
 
         return unbound_method
     return _on
