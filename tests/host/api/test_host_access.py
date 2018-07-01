@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, PropertyMock
 from requests import Response
 
-from bumblebee.host.api.botqueue import BotQueueApi
+from bumblebee.host.api.rest import RestApi
 from bumblebee.host.api.host_access import HostAccess
 from bumblebee.host.configurations import HostConfiguration
 from bumblebee.host.events import AuthFlowEvents
@@ -30,7 +30,7 @@ class TestHostAccess(object):
             }
         }
 
-        api = MagicMock(BotQueueApi)
+        api = MagicMock(RestApi)
         api.post.return_value = response
         resolver.instance(api)
 

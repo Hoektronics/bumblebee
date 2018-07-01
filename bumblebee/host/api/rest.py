@@ -10,7 +10,7 @@ class AccessTokenNotFound(Exception):
     pass
 
 
-class BotQueueApi(object):
+class RestApi(object):
     def __init__(self,
                  config: HostConfiguration):
         self._headers = {}
@@ -24,12 +24,12 @@ class BotQueueApi(object):
 
         access_token = self.config["access_token"]
 
-        botqueue_api = BotQueueApi(self.config)
-        botqueue_api._headers = self._headers.copy()
+        rest_api = RestApi(self.config)
+        rest_api._headers = self._headers.copy()
 
-        botqueue_api._headers["Authorization"] = f"Bearer {access_token}"
+        rest_api._headers["Authorization"] = f"Bearer {access_token}"
 
-        return botqueue_api
+        return rest_api
 
     def get(self, url):
         full_url = urljoin(self.config["server"], url)

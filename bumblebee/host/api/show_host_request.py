@@ -1,13 +1,13 @@
 from requests import Response
 
-from bumblebee.host.api.botqueue import BotQueueApi
+from bumblebee.host.api.rest import RestApi
 from bumblebee.host.configurations import HostConfiguration
 
 
 class ShowHostRequest(object):
     def __init__(self,
                  config: HostConfiguration,
-                 api: BotQueueApi):
+                 api: RestApi):
         self.config = config
         self.api = api
 

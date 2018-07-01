@@ -3,16 +3,16 @@ from unittest.mock import MagicMock, patch, Mock, PropertyMock
 import pytest
 from requests import Response
 
-from bumblebee.host.api.botqueue import BotQueueApi, AccessTokenNotFound
+from bumblebee.host.api.rest import RestApi, AccessTokenNotFound
 from bumblebee.host.configurations import HostConfiguration
 
 
-class TestBotQueueApi(object):
+class TestRestApi(object):
     def test_with_token_throws_access_token_not_found_if_access_token_is_not_available(self, resolver):
         config = MagicMock(HostConfiguration)
         resolver.instance(config)
 
-        api: BotQueueApi = resolver(BotQueueApi)
+        api: RestApi = resolver(RestApi)
 
         with pytest.raises(AccessTokenNotFound):
             api.with_token()
@@ -23,7 +23,7 @@ class TestBotQueueApi(object):
 
         config["access_token"] = "token"
 
-        api: BotQueueApi = resolver(BotQueueApi)
+        api: RestApi = resolver(RestApi)
 
         new_api = api.with_token()
 
@@ -39,7 +39,7 @@ class TestBotQueueApi(object):
         resolver.instance(config)
         config["server"] = "https://server/"
 
-        api: BotQueueApi = resolver(BotQueueApi)
+        api: RestApi = resolver(RestApi)
 
         api._headers["Authorization"] = "Bearer token"
 
@@ -49,7 +49,7 @@ class TestBotQueueApi(object):
         type(response).ok = ok_mock
         response.json.return_value = {}
 
-        with patch('bumblebee.host.api.botqueue.requests') as RequestsMock:
+        with patch('bumblebee.host.api.rest.requests') as RequestsMock:
             get: Mock = RequestsMock.get
             get.return_value = response
 
@@ -64,7 +64,7 @@ class TestBotQueueApi(object):
         resolver.instance(config)
         config["server"] = "https://server/"
 
-        api: BotQueueApi = resolver(BotQueueApi)
+        api: RestApi = resolver(RestApi)
 
         api._headers["Authorization"] = "Bearer token"
 
@@ -74,7 +74,7 @@ class TestBotQueueApi(object):
         type(response).ok = ok_mock
         response.json.return_value = {}
 
-        with patch('bumblebee.host.api.botqueue.requests') as RequestsMock:
+        with patch('bumblebee.host.api.rest.requests') as RequestsMock:
             post: Mock = RequestsMock.post
             post.return_value = response
 
@@ -89,7 +89,7 @@ class TestBotQueueApi(object):
         resolver.instance(config)
         config["server"] = "https://server/"
 
-        api: BotQueueApi = resolver(BotQueueApi)
+        api: RestApi = resolver(RestApi)
 
         response = MagicMock(Response)
 
@@ -97,7 +97,7 @@ class TestBotQueueApi(object):
         type(response).ok = ok_mock
         response.json.return_value = {}
 
-        with patch('bumblebee.host.api.botqueue.requests') as RequestsMock:
+        with patch('bumblebee.host.api.rest.requests') as RequestsMock:
             post: Mock = RequestsMock.post
             post.return_value = response
 
