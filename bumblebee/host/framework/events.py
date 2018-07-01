@@ -27,6 +27,9 @@ class EventCallbackWrapper(object):
             return self.event_spec.__class__
 
     def __call__(self, event: Event):
+        if not self.__should_forward(event):
+            return
+
         arg_spec = inspect.getfullargspec(self.callback)
 
         args_length = len(arg_spec.args)
@@ -39,6 +42,23 @@ class EventCallbackWrapper(object):
             self.callback()
         else:
             self.callback(event)
+
+    def __should_forward(self, event: Event):
+        if inspect.isclass(self.event_spec):
+            return True
+
+        for property_name in event.__dict__:
+            event_property = getattr(event, property_name)
+            spec_property = getattr(self.event_spec, property_name)
+
+            if spec_property is None:
+                continue
+
+            if event_property != spec_property:
+                return False
+
+        return True
+
 
 @singleton
 class EventManager(object):

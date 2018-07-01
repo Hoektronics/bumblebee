@@ -11,6 +11,20 @@ class FakeEvents(EventBag):
     class EventTwo(Event):
         pass
 
+    class EventWithOneKwarg(Event):
+        def __init__(self, name=None):
+            self.name = name
+
+    class EventWithTwoKwargs(Event):
+        def __init__(self, name=None, stuff=None):
+            self.name = name
+            self.stuff = stuff
+
+    class EventForCheckingAllProperties(Event):
+        def __init__(self, name=None):
+            self.name = name
+            self.stuff = 5
+
 
 class TestEvents(object):
     def test_firing_an_event_with_no_data_calls_bound_method_without_arguments(self):
@@ -201,3 +215,90 @@ class TestEvents(object):
         FakeEvents.EventTwo().fire()
 
         assert test_object.method_called_count == 2
+
+    def test_using_instance_of_an_event_in_decorator_works(self):
+        @bind_events
+        class FakeClassWithEvents(object):
+            def __init__(self):
+                self.method_called = False
+
+            @on(FakeEvents.EventWithoutData())
+            def instance_method(self):
+                self.method_called = True
+
+        test_object = FakeClassWithEvents()
+
+        assert not test_object.method_called
+
+        FakeEvents.EventWithoutData().fire()
+
+        assert test_object.method_called
+
+    def test_using_single_kwarg_to_filter_events_works(self):
+        @bind_events
+        class FakeClassWithEvents(object):
+            def __init__(self):
+                self.method_called = False
+
+            @on(FakeEvents.EventWithOneKwarg(name="foo"))
+            def instance_method(self):
+                self.method_called = True
+
+        test_object = FakeClassWithEvents()
+
+        assert not test_object.method_called
+
+        FakeEvents.EventWithOneKwarg(name="bar").fire()
+
+        assert not test_object.method_called
+
+        FakeEvents.EventWithOneKwarg(name="foo").fire()
+
+        assert test_object.method_called
+
+    def test_using_part_of_all_kwargs_to_filter_events_works(self):
+        @bind_events
+        class FakeClassWithEvents(object):
+            def __init__(self):
+                self.method_called = False
+
+            @on(FakeEvents.EventWithTwoKwargs(name="foo"))
+            def instance_method(self):
+                self.method_called = True
+
+        test_object = FakeClassWithEvents()
+
+        assert not test_object.method_called
+
+        FakeEvents.EventWithTwoKwargs(name="bar", stuff="other").fire()
+
+        assert not test_object.method_called
+
+        FakeEvents.EventWithTwoKwargs(name="foo", stuff="other").fire()
+
+        assert test_object.method_called
+
+
+    def test_manager_uses_properties_and_not_init_method_to_filter_events(self):
+        @bind_events
+        class FakeClassWithEvents(object):
+            def __init__(self):
+                self.method_called = False
+
+            @on(FakeEvents.EventForCheckingAllProperties(name="foo"))
+            def instance_method(self):
+                self.method_called = True
+
+        test_object = FakeClassWithEvents()
+
+        assert not test_object.method_called
+
+        first_event = FakeEvents.EventForCheckingAllProperties(name="foo")
+        first_event.stuff += 1
+        first_event.fire()
+
+        assert not test_object.method_called
+
+        FakeEvents.EventForCheckingAllProperties(name="foo").fire()
+
+        assert test_object.method_called
