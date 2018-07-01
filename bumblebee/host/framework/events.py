@@ -62,9 +62,10 @@ class EventCallbackWrapper(object):
 
 @singleton
 class EventManager(object):
+    _unbound_methods = {}
+
     def __init__(self):
         self._listeners = {}
-        self._unbound_methods = {}
 
     def on(self, event_spec, callback):
         wrapper = EventCallbackWrapper(callback, event_spec)

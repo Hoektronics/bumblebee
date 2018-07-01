@@ -1,4 +1,5 @@
 from bumblebee.host.framework.events import EventBag, Event, EventManager, on, bind_events
+from bumblebee.host.framework.ioc import Resolver
 
 
 class FakeEvents(EventBag):
@@ -278,7 +279,6 @@ class TestEvents(object):
 
         assert test_object.method_called
 
-
     def test_manager_uses_properties_and_not_init_method_to_filter_events(self):
         @bind_events
         class FakeClassWithEvents(object):
@@ -302,3 +302,35 @@ class TestEvents(object):
         FakeEvents.EventForCheckingAllProperties(name="foo").fire()
 
         assert test_object.method_called
+
+    def test_manager_keeps_decorated_methods_even_with_different_event_manager(self, resolver):
+        @bind_events
+        class FakeClassWithEvents(object):
+            def __init__(self):
+                self.method_called_count = 0
+
+            @on(FakeEvents.EventWithoutData)
+            def instance_method(self):
+                self.method_called_count += 1
+
+        first_test_object = FakeClassWithEvents()
+
+        assert first_test_object.method_called_count == 0
+
+        FakeEvents.EventWithoutData().fire()
+
+        assert first_test_object.method_called_count == 1
+
+        Resolver.reset()
+        second_resolver = Resolver.get()
+
+        assert resolver(EventManager) is not second_resolver(EventManager)
+
+        second_test_object = FakeClassWithEvents()
+
+        assert second_test_object.method_called_count == 0
+
+        FakeEvents.EventWithoutData().fire()
+
+        assert first_test_object.method_called_count == 1
+        assert second_test_object.method_called_count == 1
