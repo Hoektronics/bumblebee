@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, PropertyMock
 from requests import Response
 
 from bumblebee.host.api.rest import RestApi
-from bumblebee.host.api.show_host_request import ShowHostRequest
+from bumblebee.host.api.queries.show_host_request import ShowHostRequest
 from bumblebee.host.configurations import HostConfiguration
 
 
