@@ -5,6 +5,12 @@ class FakeEvents(EventBag):
     class EventWithoutData(Event):
         pass
 
+    class EventOne(Event):
+        pass
+
+    class EventTwo(Event):
+        pass
+
 
 class TestEvents(object):
     def test_firing_an_event_with_no_data_calls_bound_method_without_arguments(self):
@@ -172,3 +178,26 @@ class TestEvents(object):
         FakeEvents.EventWithoutData().fire()
 
         assert test_object.method_called
+
+    def test_wrapping_function_with_two_events_works(self):
+        @bind_events
+        class FakeClassWithEvents(object):
+            def __init__(self):
+                self.method_called_count = 0
+
+            @on(FakeEvents.EventOne)
+            @on(FakeEvents.EventTwo)
+            def instance_method(self):
+                self.method_called_count += 1
+
+        test_object = FakeClassWithEvents()
+
+        assert test_object.method_called_count == 0
+
+        FakeEvents.EventOne().fire()
+
+        assert test_object.method_called_count == 1
+
+        FakeEvents.EventTwo().fire()
+
+        assert test_object.method_called_count == 2
