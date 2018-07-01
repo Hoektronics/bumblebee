@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, PropertyMock
 from requests import Response
 
 from bumblebee.host.api.rest import RestApi
-from bumblebee.host.api.host_access import HostAccess
+from bumblebee.host.api.commands.host_access import HostAccess
 from bumblebee.host.configurations import HostConfiguration
 from bumblebee.host.events import AuthFlowEvents
 

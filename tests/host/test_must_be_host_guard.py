@@ -1,11 +1,10 @@
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock
 
-from bumblebee.host.api.host_access import HostAccess
-from bumblebee.host.api.host_refresh import HostRefresh
-from bumblebee.host.api.make_host_request import MakeHostRequest
+from bumblebee.host.api.commands.host_access import HostAccess
+from bumblebee.host.api.commands.host_refresh import HostRefresh
+from bumblebee.host.api.commands.make_host_request import MakeHostRequest
 from bumblebee.host.api.show_host_request import ShowHostRequest
 from bumblebee.host.configurations import HostConfiguration
-from bumblebee.host.events import AuthFlowEvents
 from bumblebee.host.must_be_host_guard import MustBeHostGuard
 
 
