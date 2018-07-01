@@ -1,9 +1,26 @@
 from threading import Thread
 
+from appdirs import AppDirs
+
 from bumblebee.bqclient import BQClient
+from bumblebee.host import Host
+from bumblebee.host.framework.ioc import Resolver
+from bumblebee.host.must_be_host_guard import MustBeHostGuard
 
-bq_client = BQClient()
+resolver = Resolver.get()
 
-thread = Thread(target=bq_client.run)
+app_dirs = AppDirs(appname='BQClient')
+resolver.instance(app_dirs)
+
+# This ensures that the events of BQClient are registered
+client = resolver(BQClient)
+
+must_be_host_guard: MustBeHostGuard = resolver(MustBeHostGuard)
+
+must_be_host_guard()
+
+host: Host = resolver(Host)
+
+thread = Thread(target=host.run)
 thread.start()
 thread.join()

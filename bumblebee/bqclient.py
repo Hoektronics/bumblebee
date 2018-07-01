@@ -1,19 +1,27 @@
-from appdirs import AppDirs
-
-from bumblebee.host import Host
 from bumblebee.host import on
-from bumblebee.host.events import HostEvents
+from bumblebee.host.configurations import HostConfiguration
+from bumblebee.host.events import HostEvents, AuthFlowEvents
 from bumblebee.host.events import BotEvents
-from bumblebee.host.framework import resolver
+from bumblebee.host.framework.events import bind_events
+from bumblebee.host.framework.ioc import Resolver
 
 
-class BQClient(Host):
-    app_name = 'BQClient'
-    app_dirs = AppDirs(app_name)
-    resolver.instance(app_dirs)
+@bind_events
+class BQClient(object):
+    def __init__(self,
+                 resolver: Resolver):
+        self.resolver = resolver
 
-    def __init__(self):
-        super(BQClient, self).__init__()
+    @on(AuthFlowEvents.HostRequestMade)
+    def _host_request_made(self, event: AuthFlowEvents.HostRequestMade):
+        request_id = event.host_request["id"]
+
+        host_config: HostConfiguration = self.resolver(HostConfiguration)
+        server = host_config["server"]
+
+        url = f"{server}/hosts/requests/{request_id}"
+        print("Please go here in a web browser to claim this host!")
+        print(url)
 
     @on(HostEvents.Startup)
     def _start(self):
