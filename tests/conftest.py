@@ -42,23 +42,23 @@ def fakes_events(resolver):
             self._original: EventManager = resolver(EventManager)
 
             self._fire_function = lambda event: EventManager.fire(self._original, event)
-            self._original.fire = MagicMock(side_effect = self._fire_function)
+            self._original.fire = MagicMock(side_effect=self._fire_function)
 
             self._fired_events = {}
 
-        def fake(self, *event_classes: type):
-            for event_class in event_classes:
-                def _internal(fired_event: Event):
-                    if isinstance(fired_event, event_class):
-                        if event_class not in self._fired_events:
-                            self._fired_events[event_class] = []
+        def fake(self, event_class: type):
+            def _internal(fired_event: Event):
+                if isinstance(fired_event, event_class):
+                    if event_class not in self._fired_events:
+                        self._fired_events[event_class] = []
 
-                        self._fired_events[event_class].append(fired_event)
-                    else:
-                        self._fire_function(fired_event)
+                    self._fired_events[event_class].append(fired_event)
+                else:
+                    _internal.current_fire_function(fired_event)
 
-                self._fire_function = _internal
+            _internal.current_fire_function = self._fire_function
 
+            self._fire_function = _internal
             self._original.fire.side_effect = self._fire_function
 
         def fired(self, event: Event):
