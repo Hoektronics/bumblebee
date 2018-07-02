@@ -1,4 +1,4 @@
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock, MagicMock, call
 
 import pytest
 
@@ -37,6 +37,22 @@ def dictionary_magic():
 
 @pytest.fixture
 def fakes_events(resolver):
+    class EventAssertion(object):
+        def __init__(self):
+            self.calls = []
+
+        def __call__(self, event):
+            self.calls.append(call(event))
+
+        def __bool__(self):
+            return len(self.calls) > 0
+
+        def once(self):
+            return self.times(1)
+
+        def times(self, count):
+            return len(self.calls) == count
+
     class FakesEvents(object):
         def __init__(self):
             self._original: EventManager = resolver(EventManager)
@@ -44,15 +60,15 @@ def fakes_events(resolver):
             self._fire_function = lambda event: EventManager.fire(self._original, event)
             self._original.fire = MagicMock(side_effect=self._fire_function)
 
-            self._fired_events = {}
+            self._event_assertions = {}
 
         def fake(self, event_class: type):
+            if event_class not in self._event_assertions:
+                self._event_assertions[event_class] = EventAssertion()
+
             def _internal(fired_event: Event):
                 if isinstance(fired_event, event_class):
-                    if event_class not in self._fired_events:
-                        self._fired_events[event_class] = []
-
-                    self._fired_events[event_class].append(fired_event)
+                    self._event_assertions[event_class](fired_event)
                 else:
                     _internal.current_fire_function(fired_event)
 
@@ -62,6 +78,6 @@ def fakes_events(resolver):
             self._original.fire.side_effect = self._fire_function
 
         def fired(self, event: Event):
-            return event in self._fired_events
+            return self._event_assertions[event]
 
     return FakesEvents()
