@@ -254,6 +254,58 @@ class TestBotsHandler(object):
         removed = fakes_events.fired(BotEvents.BotRemoved)
         assert removed.once()
 
+    def test_polling_will_fire_bot_updated_on_update(self, resolver, dictionary_magic, fakes_events):
+        fakes_events.fake(BotEvents.BotAdded)
+        fakes_events.fake(BotEvents.BotUpdated)
+
+        config = dictionary_magic(MagicMock(HostConfiguration))
+        resolver.instance(config)
+
+        rest = Mock(RestApi)
+        rest.with_token.return_value = rest
+        response = MagicMock(Response)
+        rest.get.return_value = response
+
+        ok_mock = PropertyMock(return_value=True)
+        type(response).ok = ok_mock
+
+        response.json.side_effect = [
+            {
+                "data": [
+                    {
+                        "id": 1,
+                        "name": "Test bot",
+                        "type": "3d_printer",
+                        "status": "Offline"
+                    }
+                ]
+            },
+            {
+                "data": [
+                    {
+                        "id": 1,
+                        "name": "Test bot",
+                        "type": "3d_printer",
+                        "status": "Idle"
+                    }
+                ]
+            }
+        ]
+        resolver.instance(rest)
+
+        socket = Mock(WebsocketApi)
+        resolver.instance(socket)
+
+        handler = resolver(BotsHandler)
+        handler.poll()
+        handler.poll()
+
+        rest.with_token.assert_called()
+        rest.get.assert_called_with("/host/bots")
+
+        assert fakes_events.fired(BotEvents.BotAdded).once()
+        assert fakes_events.fired(BotEvents.BotUpdated).once()
+
     def test_polling_will_emit_assigned_job(self, resolver, dictionary_magic, fakes_events):
         fakes_events.fake(BotEvents.BotAdded)
         fakes_events.fake(JobEvents.JobAssigned)

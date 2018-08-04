@@ -20,6 +20,10 @@ class BotEvents(EventBag):
         def __init__(self, bot):
             self.bot = bot
 
+    class BotUpdated(Event):
+        def __init__(self, bot):
+            self.bot = bot
+
 
 class JobEvents(EventBag):
     class JobAssigned(Event):

@@ -33,6 +33,7 @@ setup(name="bqclient",
       ],
       install_requires=[
           'appdirs',
+          'deepdiff',
           'requests',
       ],
       tests_require=[

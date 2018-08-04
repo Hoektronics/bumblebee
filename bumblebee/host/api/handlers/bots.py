@@ -1,3 +1,5 @@
+from deepdiff import DeepDiff
+
 from bumblebee.host import on
 from bumblebee.host.api.rest import RestApi
 from bumblebee.host.api.socket import WebsocketApi
@@ -40,6 +42,10 @@ class BotsHandler(object):
 
             if bot_id not in self._bots:
                 BotEvents.BotAdded(bot).fire()
+            else:
+                diff = DeepDiff(self._bots[bot_id], bot)
+                if diff:
+                    BotEvents.BotUpdated(bot).fire()
 
             if "job" in bot:
                 JobEvents.JobAssigned(bot["job"]).fire()
