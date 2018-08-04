@@ -21,6 +21,12 @@ class BotEvents(EventBag):
             self.bot = bot
 
 
+class JobEvents(EventBag):
+    class JobAssigned(Event):
+        def __init__(self, job):
+            self.job = job
+
+
 class HostEvents(EventBag):
     class Startup(Event):
         pass

@@ -2,7 +2,7 @@ from bumblebee.host import on
 from bumblebee.host.api.rest import RestApi
 from bumblebee.host.api.socket import WebsocketApi
 from bumblebee.host.configurations import HostConfiguration
-from bumblebee.host.events import AuthFlowEvents, BotEvents
+from bumblebee.host.events import AuthFlowEvents, BotEvents, JobEvents
 from bumblebee.host.framework.events import bind_events
 
 
@@ -40,6 +40,9 @@ class BotsHandler(object):
 
             if bot_id not in self._bots:
                 BotEvents.BotAdded(bot).fire()
+
+            if "job" in bot:
+                JobEvents.JobAssigned(bot["job"]).fire()
 
             _bot_ids_seen_in_response.append(bot_id)
             self._bots[bot_id] = bot
