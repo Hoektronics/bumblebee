@@ -7,6 +7,7 @@ from bumblebee.host.api.rest import RestApi
 from bumblebee.host.api.socket import WebsocketApi
 from bumblebee.host.configurations import HostConfiguration
 from bumblebee.host.events import AuthFlowEvents, BotEvents, JobEvents
+from bumblebee.host.framework.recurring_task import RecurringTask
 
 
 class TestBotsHandler(object):
@@ -47,6 +48,24 @@ class TestBotsHandler(object):
         }).fire()
 
         socket.subscribe.assert_called_with('private-host.1')
+
+    def test_tasks_returns_polling_task(self, resolver, dictionary_magic):
+        config = dictionary_magic(MagicMock(HostConfiguration))
+        resolver.instance(config)
+
+        rest = Mock(RestApi)
+        resolver.instance(rest)
+
+        socket = Mock(WebsocketApi)
+        resolver.instance(socket)
+
+        handler = resolver(BotsHandler)
+        tasks = handler.tasks()
+
+        assert len(tasks) == 1
+        poll_task: RecurringTask = tasks[0]
+        assert poll_task.interval == 60
+        assert poll_task.function == handler.poll
 
     def test_polling_calls_the_right_endpoint(self, resolver, dictionary_magic, fakes_events):
         fakes_events.fake(BotEvents.BotAdded)
