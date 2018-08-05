@@ -42,9 +42,6 @@ class BotsHandler(Handler):
                 if diff:
                     BotEvents.BotUpdated(bot).fire()
 
-            if "job" in bot:
-                JobEvents.JobAssigned(bot["job"]).fire()
-
             _bot_ids_seen_in_response.append(bot_id)
             self._bots[bot_id] = bot
 

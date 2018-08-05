@@ -77,7 +77,7 @@ def fakes_events(resolver):
             self._fire_function = _internal
             self._original.fire.side_effect = self._fire_function
 
-        def fired(self, event: Event):
+        def fired(self, event: Event) -> EventAssertion:
             return self._event_assertions[event]
 
     return FakesEvents()
