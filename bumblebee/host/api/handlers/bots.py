@@ -2,11 +2,8 @@ from typing import List
 
 from deepdiff import DeepDiff
 
-from bumblebee.host import on
 from bumblebee.host.api.rest import RestApi
-from bumblebee.host.api.socket import WebsocketApi
-from bumblebee.host.configurations import HostConfiguration
-from bumblebee.host.events import AuthFlowEvents, BotEvents, JobEvents
+from bumblebee.host.events import BotEvents, JobEvents
 from bumblebee.host.framework.api.handler import Handler
 from bumblebee.host.framework.events import bind_events
 from bumblebee.host.framework.recurring_task import RecurringTask
@@ -15,29 +12,16 @@ from bumblebee.host.framework.recurring_task import RecurringTask
 @bind_events
 class BotsHandler(Handler):
     def __init__(self,
-                 config: HostConfiguration,
-                 rest: RestApi,
-                 socket: WebsocketApi):
-        self.config = config
+                 rest: RestApi):
         self.rest = rest
-        self.socket = socket
 
         self._bots = {}
         self._tasks = [
             RecurringTask(60, self.poll)
         ]
 
-        if "id" in self.config:
-            host_id = self.config["id"]
-            self.socket.subscribe(f"private-host.{host_id}")
-
     def tasks(self) -> List[RecurringTask]:
         return self._tasks
-
-    @on(AuthFlowEvents.HostMade)
-    def _subscribe_to_host(self, event: AuthFlowEvents.HostMade):
-        host_id = event.host["id"]
-        self.socket.subscribe(f"private-host.{host_id}")
 
     def poll(self):
         response = self.rest.with_token().get("/host/bots")
