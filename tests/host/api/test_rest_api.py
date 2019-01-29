@@ -8,6 +8,39 @@ from bumblebee.host.configurations import HostConfiguration
 
 
 class TestRestApi(object):
+    default_headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+    }
+
+    def test_default_headers_are_set(self, resolver, dictionary_magic):
+        config = dictionary_magic(MagicMock(HostConfiguration))
+        resolver.instance(config)
+        config["server"] = "https://server/"
+
+        api: RestApi = resolver(RestApi)
+
+        assert "Content-Type" in api._headers
+        assert api._headers["Content-Type"] == "application/json"
+        assert "Accept" in api._headers
+        assert api._headers["Accept"] == "application/json"
+
+        response = MagicMock(Response)
+
+        ok_mock = PropertyMock(return_value=True)
+        type(response).ok = ok_mock
+        response.json.return_value = {}
+
+        with patch('bumblebee.host.api.rest.requests') as RequestsMock:
+            get: Mock = RequestsMock.get
+            get.return_value = response
+
+            actual = api.get("/foo/bar")
+
+            get.assert_called_with("https://server/foo/bar", headers=self.default_headers)
+
+            assert actual is response
+
     def test_with_token_throws_access_token_not_found_if_access_token_is_not_available(self, resolver):
         config = MagicMock(HostConfiguration)
         resolver.instance(config)
@@ -55,7 +88,9 @@ class TestRestApi(object):
 
             actual = api.get("/foo/bar")
 
-            get.assert_called_with("https://server/foo/bar", headers={"Authorization": "Bearer token"})
+            get.assert_called_with("https://server/foo/bar",
+                                   headers={"Authorization": "Bearer token", **self.default_headers}
+                                   )
 
             assert actual is response
 
@@ -80,7 +115,10 @@ class TestRestApi(object):
 
             actual = api.post("/foo/bar")
 
-            post.assert_called_with("https://server/foo/bar", json={}, headers={"Authorization": "Bearer token"})
+            post.assert_called_with("https://server/foo/bar",
+                                    json={},
+                                    headers={"Authorization": "Bearer token", **self.default_headers}
+                                    )
 
             assert actual is response
 
@@ -103,6 +141,9 @@ class TestRestApi(object):
 
             actual = api.post("/foo/bar", {"key": "value"})
 
-            post.assert_called_with("https://server/foo/bar", json={"key": "value"}, headers={})
+            post.assert_called_with("https://server/foo/bar",
+                                    json={"key": "value"},
+                                    headers=self.default_headers
+                                    )
 
             assert actual is response

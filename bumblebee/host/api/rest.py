@@ -13,7 +13,10 @@ class AccessTokenNotFound(Exception):
 class RestApi(object):
     def __init__(self,
                  config: HostConfiguration):
-        self._headers = {}
+        self._headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        }
         self.config = config
 
     def with_token(self):
