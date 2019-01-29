@@ -1,3 +1,5 @@
+import sys
+
 from requests import Response
 
 from bumblebee.host.api.rest import RestApi
@@ -17,3 +19,7 @@ class HostRefresh(object):
         if response.ok:
             json = response.json()
             self.config["access_token"] = json["access_token"]
+        else:
+            print(f"Got status code {response.status_code} back")
+            print(f"Content: {response.content}")
+            sys.exit(1)
