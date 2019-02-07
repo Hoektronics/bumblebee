@@ -20,7 +20,7 @@ class Resolver(object):
 
         self.instance(self)
 
-    def __call__(self, cls):
+    def __call__(self, cls, **kwargs):
         # Implicit binding
         if cls not in self._bindings:
             if cls in self._annotated_singletons:
@@ -28,9 +28,9 @@ class Resolver(object):
             else:
                 self.bind(cls)
 
-        return self._bindings[cls]()
+        return self._bindings[cls](**kwargs)
 
-    def _make(self, cls):
+    def _make(self, cls, **kwargs):
         args_spec = inspect.getfullargspec(cls.__init__)
 
         if len(args_spec.args) > 1:
@@ -40,6 +40,8 @@ class Resolver(object):
                 if arg in args_spec.annotations:
                     argument_class = args_spec.annotations[arg]
                     var_args.append(self.__call__(argument_class))
+                elif arg in kwargs:
+                    var_args.append(kwargs[arg])
                 else:
                     message = "Cannot bind argument {arg} for class {cls}".format(
                         arg=arg,
@@ -66,8 +68,8 @@ class Resolver(object):
         if bind_function is not None:
             _internal = bind_function
         else:
-            def _internal():
-                return self._make(cls)
+            def _internal(**kwargs):
+                return self._make(cls, **kwargs)
 
         self._bindings[cls] = _internal
 

@@ -66,6 +66,12 @@ class TestIocResolver(object):
         assert first_instance is not second_instance
         assert call_count == 2
 
+    def test_can_specify_unannotated_parameters_by_name(self, resolver):
+        instance = resolver(UnannotatedFakeClass, foo=5)
+
+        assert instance is not None
+        assert instance.foo == 5
+
     def test_can_resolve_singleton_function(self, resolver):
         def resolve_instance():
             return NoArgumentFakeClass()
