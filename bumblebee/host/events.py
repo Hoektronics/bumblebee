@@ -30,6 +30,10 @@ class JobEvents(EventBag):
         def __init__(self, job):
             self.job = job
 
+    class JobStarted(Event):
+        def __init__(self, job):
+            self.job = job
+
 
 class HostEvents(EventBag):
     class Startup(Event):
