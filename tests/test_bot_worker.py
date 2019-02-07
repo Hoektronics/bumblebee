@@ -1,0 +1,2 @@
+class TestBotWorker(object):
+    pass

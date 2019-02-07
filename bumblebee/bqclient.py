@@ -1,3 +1,4 @@
+from bumblebee.bot_worker import BotWorker
 from bumblebee.host import on
 from bumblebee.host.configurations import HostConfiguration
 from bumblebee.host.events import HostEvents, AuthFlowEvents
@@ -11,6 +12,7 @@ class BQClient(object):
     def __init__(self,
                  resolver: Resolver):
         self.resolver = resolver
+        self._workers = {}
 
     @on(AuthFlowEvents.HostRequestMade)
     def _host_request_made(self, event: AuthFlowEvents.HostRequestMade):
@@ -33,8 +35,10 @@ class BQClient(object):
 
     @on(BotEvents.BotAdded)
     def _bot_added(self, event):
-        print("Bot added!")
-        print(event.bot)
+        bot_id = event.bot["id"]
+        worker = self.resolver(BotWorker, bot_id=bot_id)
+
+        self._workers[bot_id] = worker
 
     @on(BotEvents.BotRemoved)
     def _bot_removed(self, event):
