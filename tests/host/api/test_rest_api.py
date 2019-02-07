@@ -147,3 +147,57 @@ class TestRestApi(object):
                                     )
 
             assert actual is response
+
+    def test_put_sends_headers(self, resolver, dictionary_magic):
+        config = dictionary_magic(MagicMock(HostConfiguration))
+        resolver.instance(config)
+        config["server"] = "https://server/"
+
+        api: RestApi = resolver(RestApi)
+
+        api._headers["Authorization"] = "Bearer token"
+
+        response = MagicMock(Response)
+
+        ok_mock = PropertyMock(return_value=True)
+        type(response).ok = ok_mock
+        response.json.return_value = {}
+
+        with patch('bumblebee.host.api.rest.requests') as RequestsMock:
+            put: Mock = RequestsMock.put
+            put.return_value = response
+
+            actual = api.put("/foo/bar")
+
+            put.assert_called_with("https://server/foo/bar",
+                                    json={},
+                                    headers={"Authorization": "Bearer token", **self.default_headers}
+                                    )
+
+            assert actual is response
+
+    def test_put_sends_data(self, resolver, dictionary_magic):
+        config = dictionary_magic(MagicMock(HostConfiguration))
+        resolver.instance(config)
+        config["server"] = "https://server/"
+
+        api: RestApi = resolver(RestApi)
+
+        response = MagicMock(Response)
+
+        ok_mock = PropertyMock(return_value=True)
+        type(response).ok = ok_mock
+        response.json.return_value = {}
+
+        with patch('bumblebee.host.api.rest.requests') as RequestsMock:
+            put: Mock = RequestsMock.put
+            put.return_value = response
+
+            actual = api.put("/foo/bar", {"key": "value"})
+
+            put.assert_called_with("https://server/foo/bar",
+                                    json={"key": "value"},
+                                    headers=self.default_headers
+                                    )
+
+            assert actual is response
