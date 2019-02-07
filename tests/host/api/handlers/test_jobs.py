@@ -8,7 +8,7 @@ class TestJobsHandler(object):
 
         resolver(JobsHandler)
 
-        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "Offline"}
+        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "job_assigned"}
         BotEvents.BotAdded(bot).fire()
 
         assert not fakes_events.fired(JobEvents.JobAssigned)
@@ -18,7 +18,7 @@ class TestJobsHandler(object):
 
         resolver(JobsHandler)
 
-        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "Offline"}
+        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "job_assigned"}
         BotEvents.BotAdded(bot).fire()
         BotEvents.BotUpdated(bot).fire()
 
@@ -30,7 +30,7 @@ class TestJobsHandler(object):
         resolver(JobsHandler)
 
         job = {"id": 1, "status": "assigned"}
-        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "Offline", "job": job}
+        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "job_assigned", "job": job}
         BotEvents.BotAdded(bot).fire()
 
         assert fakes_events.fired(JobEvents.JobAssigned).once()
@@ -40,7 +40,7 @@ class TestJobsHandler(object):
 
         resolver(JobsHandler)
 
-        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "Offline"}
+        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "job_assigned"}
         BotEvents.BotAdded(bot)
 
         assert not fakes_events.fired(JobEvents.JobAssigned)
@@ -57,7 +57,7 @@ class TestJobsHandler(object):
         resolver(JobsHandler)
 
         job = {"id": 1, "status": "assigned"}
-        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "Offline", "job": job}
+        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "job_assigned", "job": job}
         BotEvents.BotAdded(bot).fire()
         BotEvents.BotUpdated(bot).fire()
 
