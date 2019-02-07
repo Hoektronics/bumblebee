@@ -44,13 +44,27 @@ class TestIocResolver(object):
         assert fake_class is instance
 
     def test_can_resolve_explicitly_bound_class(self, resolver):
-        resolver = Resolver()
-
         resolver.bind(NoArgumentFakeClass)
 
         fake_class = resolver(NoArgumentFakeClass)
 
         assert isinstance(fake_class, NoArgumentFakeClass)
+
+    def test_can_bind_with_a_function(self, resolver):
+        call_count = 0
+
+        def bound_function():
+            nonlocal call_count
+            call_count = call_count + 1
+            return NoArgumentFakeClass()
+
+        resolver.bind(NoArgumentFakeClass, bound_function)
+
+        first_instance = resolver(NoArgumentFakeClass)
+        second_instance = resolver(NoArgumentFakeClass)
+
+        assert first_instance is not second_instance
+        assert call_count == 2
 
     def test_can_resolve_singleton_function(self, resolver):
         def resolve_instance():

@@ -62,9 +62,12 @@ class Resolver(object):
 
         self._bindings[cls] = _internal
 
-    def bind(self, cls):
-        def _internal():
-            return self._make(cls)
+    def bind(self, cls, bind_function=None):
+        if bind_function is not None:
+            _internal = bind_function
+        else:
+            def _internal():
+                return self._make(cls)
 
         self._bindings[cls] = _internal
 
