@@ -1,6 +1,7 @@
 from time import sleep
 
 from bumblebee.host.api.handlers.bots import BotsHandler
+from bumblebee.host.api.handlers.jobs import JobsHandler
 from bumblebee.host.api.manager import ApiManager
 from bumblebee.host.events import HostEvents
 from bumblebee.host.framework.events import bind_events
@@ -15,6 +16,7 @@ class Host(object):
         resolver: Resolver = Resolver.get()
         manager: ApiManager = resolver(ApiManager)
         manager.add_handler(resolver(BotsHandler))
+        manager.add_handler(resolver(JobsHandler))
 
         manager.start()
 

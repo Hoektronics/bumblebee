@@ -26,4 +26,4 @@ class JobsHandler(object):
 
         if job_id not in self._jobs:
             self._jobs[job_id] = job
-            JobEvents.JobAssigned(job).fire()
+            JobEvents.JobAssigned(job, bot["id"]).fire()

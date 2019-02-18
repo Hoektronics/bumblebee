@@ -77,6 +77,19 @@ class EventManager(object):
         self._listeners[event_class].append(wrapper)
 
     def fire(self, event):
+        print(f"Firing event {event.__class__} with data:")
+
+        for obj_attribute_name in dir(event):
+            obj_attribute = getattr(event, obj_attribute_name)
+
+            if hasattr(obj_attribute, '__func__'):
+                continue
+
+            if obj_attribute_name[0] == '_':
+                continue
+
+            print(f"   {obj_attribute_name}: {obj_attribute}")
+
         if event.__class__ in self._listeners:
             for listener in self._listeners[event.__class__]:
                 listener(event)

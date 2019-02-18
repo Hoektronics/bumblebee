@@ -32,12 +32,13 @@ class ApiManager(object):
     def add_handler(self, handler):
         self.handlers.append(handler)
 
-        handler_tasks = handler.tasks()
-        self.tasks.extend(handler_tasks)
+        if hasattr(handler, 'tasks'):
+            handler_tasks = handler.tasks()
+            self.tasks.extend(handler_tasks)
 
-        if self._start_called:
-            for task in handler_tasks:
-                task.start()
+            if self._start_called:
+                for task in handler_tasks:
+                    task.start()
 
     def start(self):
         for task in self.tasks:

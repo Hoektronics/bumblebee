@@ -27,10 +27,15 @@ class BotEvents(EventBag):
 
 class JobEvents(EventBag):
     class JobAssigned(Event):
+        def __init__(self, job, bot_id):
+            self.job = job
+            self.bot_id = bot_id
+
+    class JobStarted(Event):
         def __init__(self, job):
             self.job = job
 
-    class JobStarted(Event):
+    class JobFinished(Event):
         def __init__(self, job):
             self.job = job
 
