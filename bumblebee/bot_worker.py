@@ -5,6 +5,7 @@ from bumblebee.host.api.commands.finish_job import FinishJob
 from bumblebee.host.api.commands.start_job import StartJob
 from bumblebee.host.downloader import Downloader
 from bumblebee.host.drivers.dummy import DummyDriver
+from bumblebee.host.drivers.printrun import PrintrunDriver
 from bumblebee.host.events import JobEvents
 from bumblebee.host.framework.events import bind_events
 from bumblebee.host.framework.ioc import Resolver
@@ -29,7 +30,7 @@ class BotWorker(object):
         print(f"Downloading {url}")
         filename = downloader.download(url)
         print("Downloaded")
-        dummy_driver = DummyDriver()
+        dummy_driver = PrintrunDriver()
 
         job_execution = JobExecution(event.job["id"], filename, dummy_driver, self.resolver)
 
