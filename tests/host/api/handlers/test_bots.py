@@ -63,7 +63,10 @@ class TestBotsHandler(object):
                     "id": 1,
                     "name": "Test bot",
                     "type": "3d_printer",
-                    "status": "Offline"
+                    "status": "Offline",
+                    "driver": {
+                        "type": "dummy"
+                    }
                 }
             ]
         }
@@ -84,6 +87,7 @@ class TestBotsHandler(object):
         assert event.bot.name == "Test bot"
         assert event.bot.status == "Offline"
         assert event.bot.type == "3d_printer"
+        assert event.bot.driver == {"type": "dummy"}
         assert event.bot.current_job is None
 
     def test_polling_adds_a_bot_only_once(self, resolver, fakes_events):
@@ -99,7 +103,7 @@ class TestBotsHandler(object):
         ok_mock = PropertyMock(return_value=True)
         type(response).ok = ok_mock
 
-        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "Offline"}
+        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "Offline", "driver": None}
         response.json.side_effect = [
             {
                 "data": [
@@ -130,6 +134,7 @@ class TestBotsHandler(object):
         assert event.bot.name == "Test bot"
         assert event.bot.status == "Offline"
         assert event.bot.type == "3d_printer"
+        assert event.bot.driver is None
         assert event.bot.current_job is None
 
     def test_polling_removes_the_bot(self, resolver, fakes_events):
@@ -144,7 +149,7 @@ class TestBotsHandler(object):
         ok_mock = PropertyMock(return_value=True)
         type(response).ok = ok_mock
 
-        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "Offline"}
+        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "Offline", "driver": None}
         response.json.side_effect = [
             {
                 "data": [
@@ -174,6 +179,7 @@ class TestBotsHandler(object):
         assert bot_added_event.bot.name == "Test bot"
         assert bot_added_event.bot.status == "Offline"
         assert bot_added_event.bot.type == "3d_printer"
+        assert bot_added_event.bot.driver is None
         assert bot_added_event.bot.current_job is None
 
         bot_removed_event = bot_removed_event_assertion.event
@@ -181,6 +187,7 @@ class TestBotsHandler(object):
         assert bot_removed_event.bot.name == "Test bot"
         assert bot_removed_event.bot.status == "Offline"
         assert bot_removed_event.bot.type == "3d_printer"
+        assert bot_removed_event.bot.driver is None
         assert bot_removed_event.bot.current_job is None
 
     def test_polling_will_add_the_bot_back(self, resolver, fakes_events):
@@ -195,7 +202,7 @@ class TestBotsHandler(object):
         ok_mock = PropertyMock(return_value=True)
         type(response).ok = ok_mock
 
-        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "Offline"}
+        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "Offline", "driver": None}
         response.json.side_effect = [
             {
                 "data": [
@@ -231,6 +238,7 @@ class TestBotsHandler(object):
             assert event.bot.name == "Test bot"
             assert event.bot.status == "Offline"
             assert event.bot.type == "3d_printer"
+            assert event.bot.driver is None
             assert event.bot.current_job is None
 
         bot_removed_event = bot_removed_event_assertion.event
@@ -238,6 +246,7 @@ class TestBotsHandler(object):
         assert bot_removed_event.bot.name == "Test bot"
         assert bot_removed_event.bot.status == "Offline"
         assert bot_removed_event.bot.type == "3d_printer"
+        assert bot_removed_event.bot.driver is None
         assert bot_removed_event.bot.current_job is None
 
     def test_polling_will_fire_bot_updated_on_update(self, resolver, fakes_events):
@@ -259,7 +268,8 @@ class TestBotsHandler(object):
                         "id": 1,
                         "name": "Test bot",
                         "type": "3d_printer",
-                        "status": "Offline"
+                        "status": "Offline",
+                        "driver": None
                     }
                 ]
             },
@@ -269,7 +279,8 @@ class TestBotsHandler(object):
                         "id": 1,
                         "name": "Test bot",
                         "type": "3d_printer",
-                        "status": "Idle"
+                        "status": "Idle",
+                        "driver": None
                     }
                 ]
             }
@@ -293,6 +304,7 @@ class TestBotsHandler(object):
         assert bot_added_event.bot.name == "Test bot"
         assert bot_added_event.bot.status == "Offline"
         assert bot_added_event.bot.type == "3d_printer"
+        assert bot_added_event.bot.driver is None
         assert bot_added_event.bot.current_job is None
 
         bot_updated_event = bot_updated_event_assertion.event
@@ -300,4 +312,5 @@ class TestBotsHandler(object):
         assert bot_updated_event.bot.name == "Test bot"
         assert bot_updated_event.bot.status == "Idle"
         assert bot_updated_event.bot.type == "3d_printer"
+        assert bot_updated_event.bot.driver is None
         assert bot_updated_event.bot.current_job is None

@@ -48,7 +48,8 @@ class BotsHandler(Handler):
                 name=bot_json["name"],
                 status=bot_json["status"],
                 type=bot_json["type"],
-                current_job=job
+                driver=bot_json["driver"],
+                current_job=job,
             )
 
             if bot.id not in self._bots:

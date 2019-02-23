@@ -40,9 +40,11 @@ class Bot(object):
                  name: str,
                  status: str,
                  type: str,
-                 current_job: Job = None):
+                 current_job: Job = None,
+                 driver=None):
         self.id = id
         self.name = name
         self.status = status
         self.type = type
         self.current_job = current_job
+        self.driver = driver

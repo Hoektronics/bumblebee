@@ -45,6 +45,9 @@ class TestJobsHandler(object):
             name="Test bot",
             type="3d_printer",
             status="job_assigned",
+            driver={
+                "type": "dummy"
+            },
             current_job=Job(
                 id=2,
                 name="Test Job",
@@ -62,6 +65,7 @@ class TestJobsHandler(object):
         assert event.bot.name == "Test bot"
         assert event.bot.status == "job_assigned"
         assert event.bot.type == "3d_printer"
+        assert event.bot.driver == {"type": "dummy"}
         assert event.bot.current_job.id == 2
         assert event.bot.current_job.name == "Test Job"
         assert event.bot.current_job.status == "assigned"
@@ -80,7 +84,10 @@ class TestJobsHandler(object):
             id=1,
             name="Test bot",
             type="3d_printer",
-            status="job_assigned"
+            status="job_assigned",
+            driver={
+                "type": "dummy"
+            }
         )
         BotEvents.BotAdded(bot)
 
@@ -103,6 +110,7 @@ class TestJobsHandler(object):
         assert event.bot.name == "Test bot"
         assert event.bot.status == "job_assigned"
         assert event.bot.type == "3d_printer"
+        assert event.bot.driver == {"type": "dummy"}
         assert event.bot.current_job.id == 2
         assert event.bot.current_job.name == "Test Job"
         assert event.bot.current_job.status == "assigned"
@@ -122,6 +130,9 @@ class TestJobsHandler(object):
             name="Test bot",
             type="3d_printer",
             status="job_assigned",
+            driver={
+                "type": "dummy"
+            },
             current_job=Job(
                 id=2,
                 name="Test Job",
@@ -140,6 +151,7 @@ class TestJobsHandler(object):
         assert event.bot.name == "Test bot"
         assert event.bot.status == "job_assigned"
         assert event.bot.type == "3d_printer"
+        assert event.bot.driver == {"type": "dummy"}
         assert event.bot.current_job.id == 2
         assert event.bot.current_job.name == "Test Job"
         assert event.bot.current_job.status == "assigned"
