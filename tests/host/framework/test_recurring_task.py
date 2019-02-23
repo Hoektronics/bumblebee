@@ -19,6 +19,7 @@ class TestRecurringTask(object):
         ]
 
         task.start()
+        task.join()
 
         mock_function.assert_called_once()
         mock_event.wait.assert_called_once_with(interval)
@@ -34,6 +35,7 @@ class TestRecurringTask(object):
         mock_event.is_set.return_value = True
 
         task.start()
+        task.join()
 
         mock_function.assert_not_called()
         mock_event.wait.assert_not_called()
@@ -47,5 +49,7 @@ class TestRecurringTask(object):
         task.cancelled = mock_event
 
         task.cancel()
+        task.start()
+        task.join()
 
         mock_event.set.assert_called_once()
