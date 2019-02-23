@@ -75,8 +75,16 @@ class TestBotsHandler(object):
         rest.with_token.assert_called_once()
         rest.get.assert_called_once_with("/host/bots")
 
-        assert fakes_events.fired(BotEvents.BotAdded)
+        bot_added_event_assertion = fakes_events.fired(BotEvents.BotAdded)
+        assert bot_added_event_assertion.once()
         assert not fakes_events.fired(BotEvents.BotRemoved)
+
+        event: BotEvents.BotAdded = bot_added_event_assertion.event
+        assert event.bot.id == 1
+        assert event.bot.name == "Test bot"
+        assert event.bot.status == "Offline"
+        assert event.bot.type == "3d_printer"
+        assert event.bot.current_job is None
 
     def test_polling_adds_a_bot_only_once(self, resolver, fakes_events):
         fakes_events.fake(BotEvents.BotAdded)
@@ -113,9 +121,16 @@ class TestBotsHandler(object):
         rest.with_token.assert_called()
         rest.get.assert_called_with("/host/bots")
 
-        fired = fakes_events.fired(BotEvents.BotAdded)
-        assert fired.once()
+        bot_added_event_assertion = fakes_events.fired(BotEvents.BotAdded)
+        assert bot_added_event_assertion.once()
         assert not fakes_events.fired(BotEvents.BotRemoved)
+
+        event: BotEvents.BotAdded = bot_added_event_assertion.event
+        assert event.bot.id == 1
+        assert event.bot.name == "Test bot"
+        assert event.bot.status == "Offline"
+        assert event.bot.type == "3d_printer"
+        assert event.bot.current_job is None
 
     def test_polling_removes_the_bot(self, resolver, fakes_events):
         fakes_events.fake(BotEvents.BotAdded)
@@ -149,10 +164,24 @@ class TestBotsHandler(object):
         rest.with_token.assert_called()
         rest.get.assert_called_with("/host/bots")
 
-        added = fakes_events.fired(BotEvents.BotAdded)
-        assert added.once()
-        removed = fakes_events.fired(BotEvents.BotRemoved)
-        assert removed.once()
+        bot_added_event_assertion = fakes_events.fired(BotEvents.BotAdded)
+        assert bot_added_event_assertion.once()
+        bot_removed_event_assertion = fakes_events.fired(BotEvents.BotRemoved)
+        assert bot_removed_event_assertion.once()
+
+        bot_added_event = bot_added_event_assertion.event
+        assert bot_added_event.bot.id == 1
+        assert bot_added_event.bot.name == "Test bot"
+        assert bot_added_event.bot.status == "Offline"
+        assert bot_added_event.bot.type == "3d_printer"
+        assert bot_added_event.bot.current_job is None
+
+        bot_removed_event = bot_removed_event_assertion.event
+        assert bot_removed_event.bot.id == 1
+        assert bot_removed_event.bot.name == "Test bot"
+        assert bot_removed_event.bot.status == "Offline"
+        assert bot_removed_event.bot.type == "3d_printer"
+        assert bot_removed_event.bot.current_job is None
 
     def test_polling_will_add_the_bot_back(self, resolver, fakes_events):
         fakes_events.fake(BotEvents.BotAdded)
@@ -192,10 +221,24 @@ class TestBotsHandler(object):
         rest.with_token.assert_called()
         rest.get.assert_called_with("/host/bots")
 
-        added = fakes_events.fired(BotEvents.BotAdded)
-        assert added.times(2)
-        removed = fakes_events.fired(BotEvents.BotRemoved)
-        assert removed.once()
+        bot_added_event_assertion = fakes_events.fired(BotEvents.BotAdded)
+        assert bot_added_event_assertion.times(2)
+        bot_removed_event_assertion = fakes_events.fired(BotEvents.BotRemoved)
+        assert bot_removed_event_assertion.once()
+
+        for event in bot_added_event_assertion.events:
+            assert event.bot.id == 1
+            assert event.bot.name == "Test bot"
+            assert event.bot.status == "Offline"
+            assert event.bot.type == "3d_printer"
+            assert event.bot.current_job is None
+
+        bot_removed_event = bot_removed_event_assertion.event
+        assert bot_removed_event.bot.id == 1
+        assert bot_removed_event.bot.name == "Test bot"
+        assert bot_removed_event.bot.status == "Offline"
+        assert bot_removed_event.bot.type == "3d_printer"
+        assert bot_removed_event.bot.current_job is None
 
     def test_polling_will_fire_bot_updated_on_update(self, resolver, fakes_events):
         fakes_events.fake(BotEvents.BotAdded)
@@ -240,5 +283,21 @@ class TestBotsHandler(object):
         rest.with_token.assert_called()
         rest.get.assert_called_with("/host/bots")
 
-        assert fakes_events.fired(BotEvents.BotAdded).once()
-        assert fakes_events.fired(BotEvents.BotUpdated).once()
+        bot_added_event_assertion = fakes_events.fired(BotEvents.BotAdded)
+        assert bot_added_event_assertion.once()
+        bot_updated_event_assertion = fakes_events.fired(BotEvents.BotUpdated)
+        assert bot_updated_event_assertion.once()
+
+        bot_added_event = bot_added_event_assertion.event
+        assert bot_added_event.bot.id == 1
+        assert bot_added_event.bot.name == "Test bot"
+        assert bot_added_event.bot.status == "Offline"
+        assert bot_added_event.bot.type == "3d_printer"
+        assert bot_added_event.bot.current_job is None
+
+        bot_updated_event = bot_updated_event_assertion.event
+        assert bot_updated_event.bot.id == 1
+        assert bot_updated_event.bot.name == "Test bot"
+        assert bot_updated_event.bot.status == "Idle"
+        assert bot_updated_event.bot.type == "3d_printer"
+        assert bot_updated_event.bot.current_job is None

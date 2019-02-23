@@ -46,7 +46,7 @@ class TestJobsHandler(object):
             type="3d_printer",
             status="job_assigned",
             current_job=Job(
-                id=1,
+                id=2,
                 name="Test Job",
                 status="assigned",
                 file_url="url"
@@ -54,7 +54,22 @@ class TestJobsHandler(object):
         )
         BotEvents.BotAdded(bot).fire()
 
-        assert fakes_events.fired(JobEvents.JobAssigned).once()
+        job_assigned_event_assertion = fakes_events.fired(JobEvents.JobAssigned)
+        assert job_assigned_event_assertion.once()
+
+        event: JobEvents.JobAssigned = job_assigned_event_assertion.event
+        assert event.bot.id == 1
+        assert event.bot.name == "Test bot"
+        assert event.bot.status == "job_assigned"
+        assert event.bot.type == "3d_printer"
+        assert event.bot.current_job.id == 2
+        assert event.bot.current_job.name == "Test Job"
+        assert event.bot.current_job.status == "assigned"
+        assert event.bot.current_job.file_url == "url"
+        assert event.job.id == 2
+        assert event.job.name == "Test Job"
+        assert event.job.status == "assigned"
+        assert event.job.file_url == "url"
 
     def test_job_is_assigned_on_bot_update(self, resolver, fakes_events):
         fakes_events.fake(JobEvents.JobAssigned)
@@ -72,7 +87,7 @@ class TestJobsHandler(object):
         assert not fakes_events.fired(JobEvents.JobAssigned)
 
         job = Job(
-            id=1,
+            id=2,
             name="Test Job",
             status="assigned",
             file_url="url"
@@ -80,7 +95,22 @@ class TestJobsHandler(object):
         bot.current_job = job
         BotEvents.BotUpdated(bot).fire()
 
-        assert fakes_events.fired(JobEvents.JobAssigned).once()
+        job_assigned_event_assertion = fakes_events.fired(JobEvents.JobAssigned)
+        assert job_assigned_event_assertion.once()
+
+        event: JobEvents.JobAssigned = job_assigned_event_assertion.event
+        assert event.bot.id == 1
+        assert event.bot.name == "Test bot"
+        assert event.bot.status == "job_assigned"
+        assert event.bot.type == "3d_printer"
+        assert event.bot.current_job.id == 2
+        assert event.bot.current_job.name == "Test Job"
+        assert event.bot.current_job.status == "assigned"
+        assert event.bot.current_job.file_url == "url"
+        assert event.job.id == 2
+        assert event.job.name == "Test Job"
+        assert event.job.status == "assigned"
+        assert event.job.file_url == "url"
 
     def test_job_is_assigned_once(self, resolver, fakes_events):
         fakes_events.fake(JobEvents.JobAssigned)
@@ -93,7 +123,7 @@ class TestJobsHandler(object):
             type="3d_printer",
             status="job_assigned",
             current_job=Job(
-                id=1,
+                id=2,
                 name="Test Job",
                 status="assigned",
                 file_url="url"
@@ -102,4 +132,19 @@ class TestJobsHandler(object):
         BotEvents.BotAdded(bot).fire()
         BotEvents.BotUpdated(bot).fire()
 
-        assert fakes_events.fired(JobEvents.JobAssigned).once()
+        job_assigned_event_assertion = fakes_events.fired(JobEvents.JobAssigned)
+        assert job_assigned_event_assertion.once()
+
+        event: JobEvents.JobAssigned = job_assigned_event_assertion.event
+        assert event.bot.id == 1
+        assert event.bot.name == "Test bot"
+        assert event.bot.status == "job_assigned"
+        assert event.bot.type == "3d_printer"
+        assert event.bot.current_job.id == 2
+        assert event.bot.current_job.name == "Test Job"
+        assert event.bot.current_job.status == "assigned"
+        assert event.bot.current_job.file_url == "url"
+        assert event.job.id == 2
+        assert event.job.name == "Test Job"
+        assert event.job.status == "assigned"
+        assert event.job.file_url == "url"

@@ -1,5 +1,6 @@
 from bumblebee.host.api.rest import RestApi
 from bumblebee.host.events import JobEvents
+from bumblebee.host.types import Job
 
 
 class FinishJob(object):
@@ -23,6 +24,12 @@ class FinishJob(object):
         if not job_response.ok:
             return
 
-        job = job_response.json()
+        json = job_response.json()
+        job = Job(
+            id=json["id"],
+            name=json["name"],
+            status=json["status"],
+            file_url=json["url"]
+        )
 
         JobEvents.JobFinished(job).fire()

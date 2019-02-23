@@ -2,14 +2,14 @@ from unittest.mock import MagicMock, PropertyMock
 
 from requests import Response
 
-from bumblebee.host.api.commands.start_job import StartJob
+from bumblebee.host.api.commands.finish_job import FinishJob
 from bumblebee.host.api.rest import RestApi
 from bumblebee.host.events import JobEvents
 
 
-class TestStartJob(object):
-    def test_starting_job(self, resolver, fakes_events):
-        fakes_events.fake(JobEvents.JobStarted)
+class TestFinishJob(object):
+    def test_finishing_job(self, resolver, fakes_events):
+        fakes_events.fake(JobEvents.JobFinished)
 
         job_start_response = MagicMock(Response)
         job_start_ok_mock = PropertyMock(return_value=True)
@@ -32,12 +32,12 @@ class TestStartJob(object):
         api.get.return_value = job_show_response
         resolver.instance(api)
 
-        start_job = resolver(StartJob)
+        start_job = resolver(FinishJob)
 
         start_job(1)
 
         api.put.assert_called_with("/host/jobs/1", {
-            "status": "in_progress"
+            "status": "quality_check"
         })
         api.get.assert_called_with("/host/jobs/1")
 
@@ -46,9 +46,9 @@ class TestStartJob(object):
         job_show_ok_mock.assert_called()
         job_show_response.json.assert_called()
 
-        assert fakes_events.fired(JobEvents.JobStarted).once()
+        assert fakes_events.fired(JobEvents.JobFinished).once()
 
-        event: JobEvents.JobStarted = fakes_events.fired(JobEvents.JobStarted).event
+        event: JobEvents.JobFinished = fakes_events.fired(JobEvents.JobFinished).event
         assert event.job.id == 1
         assert event.job.name == "My Job"
         assert event.job.status == "in_progress"

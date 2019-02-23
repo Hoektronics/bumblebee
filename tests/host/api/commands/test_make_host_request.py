@@ -21,7 +21,8 @@ class TestMakeHostRequest(object):
         type(response).ok = ok_mock
         response.json.return_value = {
             "data": {
-                "id": "request_id"
+                "id": 1,
+                "status": "requested"
             }
         }
 
@@ -39,5 +40,9 @@ class TestMakeHostRequest(object):
         response.json.assert_called()
 
         assert "host_request_id" in config
-        assert config["host_request_id"] == "request_id"
-        assert fakes_events.fired(AuthFlowEvents.HostRequestMade)
+        assert config["host_request_id"] == 1
+        assert fakes_events.fired(AuthFlowEvents.HostRequestMade).once()
+
+        event: AuthFlowEvents.HostRequestMade = fakes_events.fired(AuthFlowEvents.HostRequestMade).event
+        assert event.host_request.id == 1
+        assert event.host_request.status == "requested"

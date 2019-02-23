@@ -1,4 +1,4 @@
-from unittest.mock import Mock, MagicMock, call
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -52,6 +52,13 @@ def fakes_events(resolver):
 
         def times(self, count):
             return len(self.events) == count
+
+        @property
+        def event(self):
+            if not self.once():
+                raise Exception("Cannot get the event if it was not emitted once")
+
+            return self.events[0]
 
     class FakesEvents(object):
         def __init__(self):

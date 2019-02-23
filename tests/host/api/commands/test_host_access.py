@@ -52,6 +52,6 @@ class TestHostAccess(object):
 
         assert fakes_events.fired(AuthFlowEvents.HostMade).once()
 
-        event: AuthFlowEvents.HostMade = fakes_events.fired(AuthFlowEvents.HostMade).events[0]
+        event: AuthFlowEvents.HostMade = fakes_events.fired(AuthFlowEvents.HostMade).event
         assert event.host.id == 1
         assert event.host.name == "Test Host"

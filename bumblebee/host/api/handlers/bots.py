@@ -7,6 +7,7 @@ from bumblebee.host.events import BotEvents, JobEvents
 from bumblebee.host.framework.api.handler import Handler
 from bumblebee.host.framework.events import bind_events
 from bumblebee.host.framework.recurring_task import RecurringTask
+from bumblebee.host.types import Bot, Job
 
 
 @bind_events
@@ -32,18 +33,33 @@ class BotsHandler(Handler):
         json = response.json()
 
         _bot_ids_seen_in_response = []
-        for bot in json["data"]:
-            bot_id = bot["id"]
+        for bot_json in json["data"]:
+            job = None
+            if "job" in bot_json and bot_json["job"] is not None:
+                job = Job(
+                    id=bot_json["job"]["id"],
+                    name=bot_json["job"]["name"],
+                    status=bot_json["job"]["status"],
+                    file_url=bot_json["job"]["url"]
+                )
 
-            if bot_id not in self._bots:
+            bot = Bot(
+                id=bot_json["id"],
+                name=bot_json["name"],
+                status=bot_json["status"],
+                type=bot_json["type"],
+                current_job=job
+            )
+
+            if bot.id not in self._bots:
                 BotEvents.BotAdded(bot).fire()
             else:
-                diff = DeepDiff(self._bots[bot_id], bot)
+                diff = DeepDiff(self._bots[bot.id], bot)
                 if diff:
                     BotEvents.BotUpdated(bot).fire()
 
-            _bot_ids_seen_in_response.append(bot_id)
-            self._bots[bot_id] = bot
+            _bot_ids_seen_in_response.append(bot.id)
+            self._bots[bot.id] = bot
 
         for bot_id in list(self._bots.keys()):
             if bot_id not in _bot_ids_seen_in_response:
