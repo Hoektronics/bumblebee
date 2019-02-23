@@ -35,8 +35,7 @@ setup(name="bqclient",
           'appdirs',
           'deepdiff',
           'requests',
-          'pyserial',
-          'printrun'
+          'pyserial'
       ],
       tests_require=[
           "pytest",
