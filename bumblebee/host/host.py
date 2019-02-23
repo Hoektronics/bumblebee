@@ -1,4 +1,4 @@
-from time import sleep
+import threading
 
 from bumblebee.host.api.handlers.bots import BotsHandler
 from bumblebee.host.api.handlers.jobs import JobsHandler
@@ -10,6 +10,9 @@ from bumblebee.host.framework.ioc import Resolver
 
 @bind_events
 class Host(object):
+    def __init__(self):
+        self._stop_event = threading.Event()
+
     def run(self):
         HostEvents.Startup().fire()
 
@@ -20,6 +23,9 @@ class Host(object):
 
         manager.start()
 
-        sleep(1000)
+        self._stop_event.wait()
 
         HostEvents.Shutdown().fire()
+
+    def stop(self):
+        self._stop_event.set()

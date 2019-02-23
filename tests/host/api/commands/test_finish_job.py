@@ -20,10 +20,12 @@ class TestFinishJob(object):
         job_show_ok_mock = PropertyMock(return_value=True)
         type(job_show_response).ok = job_show_ok_mock
         job_show_response.json.return_value = {
-            "id": 1,
-            "name": "My Job",
-            "status": "in_progress",
-            "url": "file_url"
+            "data": {
+                "id": 1,
+                "name": "My Job",
+                "status": "in_progress",
+                "url": "file_url"
+            }
         }
 
         api = MagicMock(RestApi)

@@ -26,10 +26,10 @@ class FinishJob(object):
 
         json = job_response.json()
         job = Job(
-            id=json["id"],
-            name=json["name"],
-            status=json["status"],
-            file_url=json["url"]
+            id=json["data"]["id"],
+            name=json["data"]["name"],
+            status=json["data"]["status"],
+            file_url=json["data"]["url"]
         )
 
         JobEvents.JobFinished(job).fire()

@@ -1,3 +1,4 @@
+import signal
 from threading import Thread
 
 from appdirs import AppDirs
@@ -22,5 +23,13 @@ must_be_host_guard()
 host: Host = resolver(Host)
 
 thread = Thread(target=host.run)
+
+
+def stop_host():
+    host.stop()
+
+
+signal.signal(signal.SIGINT, stop_host)
+
 thread.start()
 thread.join()
