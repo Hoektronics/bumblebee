@@ -39,19 +39,19 @@ def dictionary_magic():
 def fakes_events(resolver):
     class EventAssertion(object):
         def __init__(self):
-            self.calls = []
+            self.events = []
 
         def __call__(self, event):
-            self.calls.append(call(event))
+            self.events.append(event)
 
         def __bool__(self):
-            return len(self.calls) > 0
+            return len(self.events) > 0
 
         def once(self):
             return self.times(1)
 
         def times(self, count):
-            return len(self.calls) == count
+            return len(self.events) == count
 
     class FakesEvents(object):
         def __init__(self):

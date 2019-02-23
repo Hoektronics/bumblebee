@@ -21,7 +21,7 @@ class BotWorker(object):
 
     @on(JobEvents.JobAssigned)
     def job_assigned(self, event: JobEvents.JobAssigned):
-        if self.bot_id != event.bot_id:
+        if self.bot_id != event.bot.id:
             return
 
         url = event.job["url"]
@@ -32,7 +32,7 @@ class BotWorker(object):
         print("Downloaded")
         dummy_driver = PrintrunDriver()
 
-        job_execution = JobExecution(event.job["id"], filename, dummy_driver, self.resolver)
+        job_execution = JobExecution(event.job.id, filename, dummy_driver, self.resolver)
 
         self.thread = Thread(target=job_execution.run)
         self.thread.start()

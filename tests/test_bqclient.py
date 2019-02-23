@@ -5,6 +5,7 @@ import pytest
 from bumblebee.bot_worker import BotWorker
 from bumblebee.bqclient import BQClient
 from bumblebee.host.events import BotEvents
+from bumblebee.host.types import Bot, User
 
 
 class TestBQClient(object):
@@ -26,8 +27,13 @@ class TestBQClient(object):
         # Make sure the client binds its events
         resolver(BQClient)
 
-        BotEvents.BotAdded({
-            "id": 1
-        }).fire()
+        bot = Bot(
+            id=1,
+            name="Test Bot",
+            status="Idle",
+            type="3d_printer"
+        )
+
+        BotEvents.BotAdded(bot).fire()
 
         assert call_count == 1

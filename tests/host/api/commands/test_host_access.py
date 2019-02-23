@@ -50,4 +50,8 @@ class TestHostAccess(object):
 
         assert "host_request_id" not in config
 
-        assert fakes_events.fired(AuthFlowEvents.HostMade)
+        assert fakes_events.fired(AuthFlowEvents.HostMade).once()
+
+        event: AuthFlowEvents.HostMade = fakes_events.fired(AuthFlowEvents.HostMade).events[0]
+        assert event.host.id == 1
+        assert event.host.name == "Test Host"

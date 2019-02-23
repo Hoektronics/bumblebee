@@ -16,7 +16,7 @@ class BQClient(object):
 
     @on(AuthFlowEvents.HostRequestMade)
     def _host_request_made(self, event: AuthFlowEvents.HostRequestMade):
-        request_id = event.host_request["id"]
+        request_id = event.host_request.id
 
         host_config: HostConfiguration = self.resolver(HostConfiguration)
         server = host_config["server"]
@@ -34,8 +34,8 @@ class BQClient(object):
         print("Host shutdown!")
 
     @on(BotEvents.BotAdded)
-    def _bot_added(self, event):
-        bot_id = event.bot["id"]
+    def _bot_added(self, event: BotEvents.BotAdded):
+        bot_id = event.bot.id
         worker = self.resolver(BotWorker, bot_id=bot_id)
 
         self._workers[bot_id] = worker

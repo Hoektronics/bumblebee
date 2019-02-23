@@ -7,6 +7,7 @@ from bumblebee.host.configurations import HostConfiguration
 from bumblebee.host.events import AuthFlowEvents
 from bumblebee.host.framework.api.handler import Handler
 from bumblebee.host.framework.recurring_task import RecurringTask
+from bumblebee.host.types import Host
 
 
 class FakeHandler(Handler):
@@ -118,9 +119,12 @@ class TestApiManager(object):
 
         socket.subscribe.assert_not_called()
 
-        AuthFlowEvents.HostMade({
-            'id': 1
-        }).fire()
+        host = Host(
+            id=1,
+            name="Test Host"
+        )
+
+        AuthFlowEvents.HostMade(host).fire()
 
         socket.subscribe.assert_called_with('private-host.1')
 

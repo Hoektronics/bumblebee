@@ -3,6 +3,7 @@ from requests import Response
 from bumblebee.host.api.rest import RestApi
 from bumblebee.host.configurations import HostConfiguration
 from bumblebee.host.events import AuthFlowEvents
+from bumblebee.host.types import Host
 
 
 class HostAccess(object):
@@ -25,4 +26,9 @@ class HostAccess(object):
 
             del self.config["host_request_id"]
 
-            AuthFlowEvents.HostMade(json['data']['host']).fire()
+            host = Host(
+                id=json["data"]["host"]["id"],
+                name=json["data"]["host"]["name"]
+            )
+
+            AuthFlowEvents.HostMade(host).fire()

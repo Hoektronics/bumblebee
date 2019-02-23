@@ -1,5 +1,6 @@
 from bumblebee.host.api.handlers.jobs import JobsHandler
 from bumblebee.host.events import JobEvents, BotEvents
+from bumblebee.host.types import Bot, Job
 
 
 class TestJobsHandler(object):
@@ -8,7 +9,12 @@ class TestJobsHandler(object):
 
         resolver(JobsHandler)
 
-        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "job_assigned"}
+        bot = Bot(
+            id=1,
+            name="Test bot",
+            type="3d_printer",
+            status="job_assigned"
+        )
         BotEvents.BotAdded(bot).fire()
 
         assert not fakes_events.fired(JobEvents.JobAssigned)
@@ -18,7 +24,12 @@ class TestJobsHandler(object):
 
         resolver(JobsHandler)
 
-        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "job_assigned"}
+        bot = Bot(
+            id=1,
+            name="Test bot",
+            type="3d_printer",
+            status="job_assigned"
+        )
         BotEvents.BotAdded(bot).fire()
         BotEvents.BotUpdated(bot).fire()
 
@@ -29,8 +40,18 @@ class TestJobsHandler(object):
 
         resolver(JobsHandler)
 
-        job = {"id": 1, "status": "assigned"}
-        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "job_assigned", "job": job}
+        bot = Bot(
+            id=1,
+            name="Test bot",
+            type="3d_printer",
+            status="job_assigned",
+            current_job=Job(
+                id=1,
+                name="Test Job",
+                status="assigned",
+                file_url="url"
+            )
+        )
         BotEvents.BotAdded(bot).fire()
 
         assert fakes_events.fired(JobEvents.JobAssigned).once()
@@ -40,13 +61,23 @@ class TestJobsHandler(object):
 
         resolver(JobsHandler)
 
-        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "job_assigned"}
+        bot = Bot(
+            id=1,
+            name="Test bot",
+            type="3d_printer",
+            status="job_assigned"
+        )
         BotEvents.BotAdded(bot)
 
         assert not fakes_events.fired(JobEvents.JobAssigned)
 
-        job = {"id": 1, "status": "assigned"}
-        bot["job"] = job
+        job = Job(
+            id=1,
+            name="Test Job",
+            status="assigned",
+            file_url="url"
+        )
+        bot.current_job = job
         BotEvents.BotUpdated(bot).fire()
 
         assert fakes_events.fired(JobEvents.JobAssigned).once()
@@ -56,8 +87,18 @@ class TestJobsHandler(object):
 
         resolver(JobsHandler)
 
-        job = {"id": 1, "status": "assigned"}
-        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "job_assigned", "job": job}
+        bot = Bot(
+            id=1,
+            name="Test bot",
+            type="3d_printer",
+            status="job_assigned",
+            current_job=Job(
+                id=1,
+                name="Test Job",
+                status="assigned",
+                file_url="url"
+            )
+        )
         BotEvents.BotAdded(bot).fire()
         BotEvents.BotUpdated(bot).fire()
 

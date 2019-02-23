@@ -1,5 +1,6 @@
 from bumblebee.host.events import BotEvents, JobEvents
 from bumblebee.host.framework.events import bind_events, on
+from bumblebee.host.types import Bot
 
 
 @bind_events
@@ -17,13 +18,13 @@ class JobsHandler(object):
         bot = event.bot
         self._handle_job_assignment(bot)
 
-    def _handle_job_assignment(self, bot):
-        if "job" not in bot:
+    def _handle_job_assignment(self, bot: Bot):
+        if bot.current_job is None:
             return
 
-        job = bot["job"]
-        job_id = job["id"]
+        job = bot.current_job
+        job_id = job.id
 
-        if job_id not in self._jobs and job['status'] == 'assigned':
+        if job_id not in self._jobs and job.status == 'assigned':
             self._jobs[job_id] = job
-            JobEvents.JobAssigned(job, bot["id"]).fire()
+            JobEvents.JobAssigned(job, bot).fire()

@@ -23,7 +23,7 @@ class ApiManager(object):
 
     @on(AuthFlowEvents.HostMade)
     def _subscribe_to_host(self, event: AuthFlowEvents.HostMade):
-        host_id = event.host["id"]
+        host_id = event.host.id
         self._subscribe_to_host_channel(host_id)
 
     def _subscribe_to_host_channel(self, host_id):
