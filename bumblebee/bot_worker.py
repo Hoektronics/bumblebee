@@ -1,9 +1,11 @@
+import json
 from threading import Thread
 
 from bumblebee.host import on
 from bumblebee.host.api.commands.finish_job import FinishJob
 from bumblebee.host.api.commands.start_job import StartJob
 from bumblebee.host.downloader import Downloader
+from bumblebee.host.drivers.driver_factory import DriverFactory
 from bumblebee.host.drivers.dummy import DummyDriver
 from bumblebee.host.events import JobEvents
 from bumblebee.host.framework.events import bind_events
@@ -29,9 +31,11 @@ class BotWorker(object):
         print(f"Downloading {url}")
         filename = downloader.download(url)
         print("Downloaded")
-        dummy_driver = DummyDriver()
 
-        job_execution = JobExecution(event.job.id, filename, dummy_driver, self.resolver)
+        driver_factory: DriverFactory = self.resolver(DriverFactory)
+        driver = driver_factory.get(json.loads(event.bot.driver))
+
+        job_execution = JobExecution(event.job.id, filename, driver, self.resolver)
 
         self.thread = Thread(target=job_execution.run)
         self.thread.start()

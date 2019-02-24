@@ -1,6 +1,12 @@
+import time
+
+
 class DummyDriver(object):
-    def __init__(self):
-        pass
+    def __init__(self, config):
+        self.command_delay = 100
+
+        if config is not None and "command_delay" in config:
+            self.command_delay = config["command_delay"]
 
     def run(self, filename):
         print(f"Executing {filename}")
@@ -8,3 +14,4 @@ class DummyDriver(object):
             lines = fh.readlines()
             for line in lines:
                 print(f"Gcode: {line.strip()}")
+                time.sleep(self.command_delay / 1000.0)

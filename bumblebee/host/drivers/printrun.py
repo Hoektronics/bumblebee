@@ -3,9 +3,14 @@ import time
 from printrun.printcore import printcore
 from printrun import gcoder
 
+
 class PrintrunDriver(object):
-    def __init__(self):
-        pass
+    def __init__(self, config):
+        self.serial_port = config["connection"]["port"]
+        self.baud_rate = None
+
+        if "baud" in config["connection"]:
+            self.baud_rate = config["connection"]["baud"]
 
     def run(self, filename):
         with open(filename, 'rb') as fh:
