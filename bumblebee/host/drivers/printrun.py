@@ -18,7 +18,7 @@ class PrintrunDriver(object):
 
         gcode = gcoder.LightGCode(gcode)
 
-        p = printcore('/dev/cu.usbmodem141301', 250000)
+        p = printcore(self.serial_port, self.baud_rate)
 
         while not p.online:
             print("Printer is not online yet")
