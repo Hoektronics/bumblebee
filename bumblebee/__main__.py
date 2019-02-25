@@ -1,4 +1,5 @@
 import signal
+import threading
 from threading import Thread
 
 from appdirs import AppDirs
@@ -30,6 +31,7 @@ def stop_host(signum, frame):
 
 
 signal.signal(signal.SIGINT, stop_host)
+signal.signal(signal.SIGTERM, stop_host)
 
 thread.start()
 thread.join()

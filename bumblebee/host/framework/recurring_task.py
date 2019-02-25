@@ -3,7 +3,7 @@ from threading import Thread, Event
 
 class RecurringTask(Thread):
     def __init__(self, interval, func):
-        Thread.__init__(self)
+        Thread.__init__(self, daemon=True)
         self.interval = interval
         self.function = func
         self.cancelled = Event()
