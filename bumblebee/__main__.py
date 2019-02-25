@@ -25,7 +25,7 @@ host: Host = resolver(Host)
 thread = Thread(target=host.run)
 
 
-def stop_host():
+def stop_host(signum, frame):
     host.stop()
 
 
