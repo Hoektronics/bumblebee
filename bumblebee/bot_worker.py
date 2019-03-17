@@ -7,7 +7,7 @@ from bumblebee.host.api.commands.start_job import StartJob
 from bumblebee.host.downloader import Downloader
 from bumblebee.host.drivers.driver_factory import DriverFactory
 from bumblebee.host.events import JobEvents, BotEvents
-from bumblebee.host.framework.events import bind_events
+from bumblebee.host.framework.events import bind_events, EventManager
 from bumblebee.host.framework.ioc import Resolver
 from bumblebee.host.types import Bot
 
@@ -22,16 +22,21 @@ def _handle_job_assignment(bot: Bot):
         JobEvents.JobAssigned(job, bot).fire()
 
 
-@bind_events
 class BotWorker(object):
     def __init__(self,
                  bot: Bot,
-                 resolver: Resolver):
+                 resolver: Resolver,
+                 event_manager: EventManager):
         self.bot = bot
         self.resolver = resolver
 
         self._current_job = None
         self._thread = None
+
+        # Bind manually, otherwise JobAssigned won't be bound to this
+        # instance when we need it in the _handle_job_assignment call
+        event_manager.bind(self)
+
         _handle_job_assignment(bot)
 
     @on(BotEvents.BotUpdated)

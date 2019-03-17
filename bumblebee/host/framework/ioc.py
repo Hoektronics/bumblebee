@@ -37,11 +37,11 @@ class Resolver(object):
             var_args = []
 
             for arg in args_spec.args[1:]:
-                if arg in args_spec.annotations:
+                if arg in kwargs:
+                    var_args.append(kwargs[arg])
+                elif arg in args_spec.annotations:
                     argument_class = args_spec.annotations[arg]
                     var_args.append(self.__call__(argument_class))
-                elif arg in kwargs:
-                    var_args.append(kwargs[arg])
                 else:
                     message = "Cannot bind argument {arg} for class {cls}".format(
                         arg=arg,

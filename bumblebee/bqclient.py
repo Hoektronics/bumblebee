@@ -35,6 +35,7 @@ class BQClient(object):
 
     @on(BotEvents.BotAdded)
     def _bot_added(self, event: BotEvents.BotAdded):
+        print("Adding bot worker:", event.bot.name)
         worker = self.resolver(BotWorker, bot=event.bot)
 
         self._workers[event.bot.id] = worker

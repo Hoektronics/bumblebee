@@ -72,6 +72,13 @@ class TestIocResolver(object):
         assert instance is not None
         assert instance.foo == 5
 
+    def test_can_specify_annotated_parameters_by_name(self, resolver):
+        fake_class = resolver(NoArgumentFakeClass)
+        instance = resolver(OneArgumentFakeClass, foo=fake_class)
+
+        assert instance is not None
+        assert instance.foo is fake_class
+
     def test_can_resolve_singleton_function(self, resolver):
         def resolve_instance():
             return NoArgumentFakeClass()
