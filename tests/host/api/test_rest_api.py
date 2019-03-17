@@ -1,9 +1,8 @@
 from unittest.mock import MagicMock, patch, Mock, PropertyMock
 
-import pytest
 from requests import Response
 
-from bumblebee.host.api.rest import RestApi, AccessTokenNotFound
+from bumblebee.host.api.rest import RestApi
 from bumblebee.host.configurations import HostConfiguration
 
 
@@ -24,6 +23,7 @@ class TestRestApi(object):
         assert api._headers["Content-Type"] == "application/json"
         assert "Accept" in api._headers
         assert api._headers["Accept"] == "application/json"
+        assert "Authorization" not in api._headers
 
         response = MagicMock(Response)
 
@@ -40,32 +40,6 @@ class TestRestApi(object):
             post.assert_called_with("https://server/foo/bar", json={}, headers=self.default_headers)
 
             assert actual is response
-
-    def test_with_token_throws_access_token_not_found_if_access_token_is_not_available(self, resolver):
-        config = MagicMock(HostConfiguration)
-        resolver.instance(config)
-
-        api: RestApi = resolver(RestApi)
-
-        with pytest.raises(AccessTokenNotFound):
-            api.with_token()
-
-    def test_with_token_updates_session(self, resolver, dictionary_magic):
-        config = dictionary_magic(MagicMock(HostConfiguration))
-        resolver.instance(config)
-
-        config["access_token"] = "token"
-
-        api: RestApi = resolver(RestApi)
-
-        new_api = api.with_token()
-
-        assert new_api is not api
-
-        assert "Authorization" not in api._headers
-
-        assert "Authorization" in new_api._headers
-        assert new_api._headers["Authorization"] == "Bearer token"
 
     def test_post_sends_headers(self, resolver, dictionary_magic):
         config = dictionary_magic(MagicMock(HostConfiguration))
