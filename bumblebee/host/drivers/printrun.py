@@ -28,3 +28,5 @@ class PrintrunDriver(object):
 
         while p.printing:
             time.sleep(5)
+
+        p.disconnect()
