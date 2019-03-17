@@ -23,7 +23,7 @@ class TestFinishJob(object):
         start_job(1)
 
         api.command.assert_called_once_with("FinishJob", {
-            "data": 1
+            "id": 1
         })
 
         assert fakes_events.fired(JobEvents.JobFinished).once()

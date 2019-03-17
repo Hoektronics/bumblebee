@@ -10,7 +10,7 @@ class FinishJob(object):
 
     def __call__(self, job_id):
         response = self.api.command("FinishJob", {
-            "data": job_id
+            "id": job_id
         })
         
         job = Job(
