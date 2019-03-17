@@ -1,6 +1,5 @@
 import threading
 
-from bumblebee.host.api.handlers.jobs import JobsHandler
 from bumblebee.host.api.manager import ApiManager
 from bumblebee.host.events import HostEvents
 from bumblebee.host.framework.events import bind_events
@@ -20,7 +19,6 @@ class Host(object):
         HostEvents.Startup().fire()
 
         api_manager: ApiManager = self.resolver(ApiManager)
-        api_manager.add_handler(self.resolver(JobsHandler))
 
         api_manager.start()
 

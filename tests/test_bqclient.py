@@ -12,8 +12,8 @@ class TestBQClient(object):
     def test_bot_worker_is_created_when_bot_is_added(self, resolver):
         call_count = 0
 
-        def get_bot_worker(bot_id):
-            if bot_id != 1:
+        def get_bot_worker(bot):
+            if bot.id != 1:
                 pytest.fail("Resolving function did not request the correct bot id")
 
             nonlocal call_count
@@ -27,13 +27,14 @@ class TestBQClient(object):
         # Make sure the client binds its events
         resolver(BQClient)
 
-        bot = Bot(
+        # Different name than the get_bot_worker parameter to prevent shadowing
+        created_bot = Bot(
             id=1,
             name="Test Bot",
             status="Idle",
             type="3d_printer"
         )
 
-        BotEvents.BotAdded(bot).fire()
+        BotEvents.BotAdded(created_bot).fire()
 
         assert call_count == 1

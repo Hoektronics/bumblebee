@@ -35,10 +35,9 @@ class BQClient(object):
 
     @on(BotEvents.BotAdded)
     def _bot_added(self, event: BotEvents.BotAdded):
-        bot_id = event.bot.id
-        worker = self.resolver(BotWorker, bot_id=bot_id)
+        worker = self.resolver(BotWorker, bot=event.bot)
 
-        self._workers[bot_id] = worker
+        self._workers[event.bot.id] = worker
 
     @on(BotEvents.BotRemoved)
     def _bot_removed(self, event):

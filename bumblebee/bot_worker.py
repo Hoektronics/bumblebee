@@ -6,23 +6,42 @@ from bumblebee.host.api.commands.finish_job import FinishJob
 from bumblebee.host.api.commands.start_job import StartJob
 from bumblebee.host.downloader import Downloader
 from bumblebee.host.drivers.driver_factory import DriverFactory
-from bumblebee.host.drivers.dummy import DummyDriver
-from bumblebee.host.events import JobEvents
+from bumblebee.host.events import JobEvents, BotEvents
 from bumblebee.host.framework.events import bind_events
 from bumblebee.host.framework.ioc import Resolver
+from bumblebee.host.types import Bot
+
+
+def _handle_job_assignment(bot: Bot):
+    if bot.current_job is None:
+        return
+
+    job = bot.current_job
+
+    if job.status == 'assigned':
+        JobEvents.JobAssigned(job, bot).fire()
 
 
 @bind_events
 class BotWorker(object):
-    def __init__(self, bot_id,
+    def __init__(self,
+                 bot: Bot,
                  resolver: Resolver):
-        self.bot_id = bot_id
+        self.bot = bot
         self.resolver = resolver
-        self.thread = None
+
+        self._current_job = None
+        self._thread = None
+        _handle_job_assignment(bot)
+
+    @on(BotEvents.BotUpdated)
+    def _bot_updated(self, event: BotEvents.BotUpdated):
+        bot = event.bot
+        _handle_job_assignment(bot)
 
     @on(JobEvents.JobAssigned)
     def job_assigned(self, event: JobEvents.JobAssigned):
-        if self.bot_id != event.bot.id:
+        if self.bot.id != event.bot.id:
             return
 
         url = event.job.file_url
@@ -37,8 +56,8 @@ class BotWorker(object):
 
         job_execution = JobExecution(event.job.id, filename, driver, self.resolver)
 
-        self.thread = Thread(target=job_execution.run)
-        self.thread.start()
+        self._thread = Thread(target=job_execution.run)
+        self._thread.start()
 
 
 class JobExecution(object):
