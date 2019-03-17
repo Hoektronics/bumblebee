@@ -1,7 +1,7 @@
 import time
 
 from bumblebee.host.api.commands.convert_request_to_host import ConvertRequestToHost
-from bumblebee.host.api.commands.host_refresh import HostRefresh
+from bumblebee.host.api.commands.refresh_access_token import RefreshAccessToken
 from bumblebee.host.api.commands.make_host_request import MakeHostRequest
 from bumblebee.host.api.queries.show_host_request import ShowHostRequest
 from bumblebee.host.configurations import HostConfiguration
@@ -18,7 +18,7 @@ class MustBeHostGuard(object):
         resolver = Resolver.get()
 
         if "access_token" in self.config:
-            host_refresh: HostRefresh = resolver(HostRefresh)
+            host_refresh: RefreshAccessToken = resolver(RefreshAccessToken)
 
             host_refresh()
 

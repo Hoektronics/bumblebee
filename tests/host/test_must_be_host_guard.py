@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 from bumblebee.host.api.commands.convert_request_to_host import ConvertRequestToHost
-from bumblebee.host.api.commands.host_refresh import HostRefresh
+from bumblebee.host.api.commands.refresh_access_token import RefreshAccessToken
 from bumblebee.host.api.commands.make_host_request import MakeHostRequest
 from bumblebee.host.api.queries.show_host_request import ShowHostRequest
 from bumblebee.host.configurations import HostConfiguration
@@ -15,7 +15,7 @@ class TestMustBeHostGuard(object):
 
         config["access_token"] = "my_token"
 
-        host_refresh_mock = MagicMock(HostRefresh)
+        host_refresh_mock = MagicMock(RefreshAccessToken)
         resolver.instance(host_refresh_mock)
 
         def update_access_token():
