@@ -35,6 +35,47 @@ class TestBotQueueApi(object):
         connected_mock.assert_called()
         ok_mock.assert_called()
 
+        rest_api.post.assert_called_with("/host", {
+            "command": "FakeTestCommand",
+            "data": {
+                "some": "data",
+            }
+        })
+
+        assert len(result) == 1
+        assert "foo" in result
+        assert result["foo"] == "bar"
+
+    def test_data_parameter_is_not_needed(self, resolver):
+        socket_api = Mock(WebSocketApi)
+        connected_mock = PropertyMock(return_value=False)
+        type(socket_api).connected = connected_mock
+        resolver.instance(socket_api)
+
+        response = MagicMock(Response)
+        ok_mock = PropertyMock(return_value=True)
+        type(response).ok = ok_mock
+        response.json.return_value = {
+            "status": "success",
+            "data": {
+                "foo": "bar",
+            }
+        }
+
+        rest_api = Mock(RestApi)
+        rest_api.post.return_value = response
+        resolver.instance(rest_api)
+
+        api = resolver(BotQueueApi)
+        result = api.command("FakeTestCommand")
+
+        connected_mock.assert_called()
+        ok_mock.assert_called()
+
+        rest_api.post.assert_called_with("/host", {
+            "command": "FakeTestCommand",
+        })
+
         assert len(result) == 1
         assert "foo" in result
         assert result["foo"] == "bar"

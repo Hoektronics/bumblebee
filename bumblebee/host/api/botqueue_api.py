@@ -14,15 +14,18 @@ class BotQueueApi(object):
     def __init__(self,
                  rest_api: RestApi,
                  websocket_api: WebSocketApi):
-        self.rest_api = rest_api
-        self.websocket_api = websocket_api
+        self._rest_api = rest_api
+        self._websocket_api = websocket_api
 
-    def command(self, name, data):
-        if not self.websocket_api.connected:
-            response = self.rest_api.post("/host", {
-                "command": name,
-                "data": data
-            })
+    def command(self, name, data=None):
+        command = {
+            "command": name
+        }
+        if data is not None:
+            command["data"] = data
+
+        if not self._websocket_api.connected:
+            response = self._rest_api.post("/host", command)
 
             response_json = response.json()
 
