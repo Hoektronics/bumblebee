@@ -2,7 +2,6 @@ from threading import Thread
 from unittest.mock import Mock
 
 from bumblebee.host import Host
-from bumblebee.host.api.manager import ApiManager
 from bumblebee.host.events import HostEvents
 from bumblebee.host.managers.bots_manager import BotsManager
 
@@ -12,11 +11,6 @@ class TestHost(object):
         fakes_events.fake(HostEvents.Startup)
         fakes_events.fake(HostEvents.Shutdown)
 
-        api_manager = Mock(ApiManager)
-        api_manager.add_handler = Mock()
-        api_manager.start = Mock()
-        resolver.instance(ApiManager, api_manager)
-
         bots_manager = Mock(BotsManager)
         bots_manager.start = Mock()
         resolver.instance(BotsManager, bots_manager)
@@ -24,8 +18,6 @@ class TestHost(object):
         host: Host = resolver(Host)
         thread = Thread(target=host.run, daemon=True)
         thread.start()
-
-        api_manager.start.assert_called_once()
 
         bots_manager.start.assert_called_once()
 
