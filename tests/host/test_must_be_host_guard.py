@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-from bumblebee.host.api.commands.host_access import HostAccess
+from bumblebee.host.api.commands.convert_request_to_host import ConvertRequestToHost
 from bumblebee.host.api.commands.host_refresh import HostRefresh
 from bumblebee.host.api.commands.make_host_request import MakeHostRequest
 from bumblebee.host.api.queries.show_host_request import ShowHostRequest
@@ -51,7 +51,7 @@ class TestMustBeHostGuard(object):
             config["id"] = "my_host_id"
             config["name"] = "Test Host"
 
-        host_access_mock = MagicMock(HostAccess)
+        host_access_mock = MagicMock(ConvertRequestToHost)
         resolver.instance(host_access_mock)
         host_access_mock.side_effect = add_host_info
 

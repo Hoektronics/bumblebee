@@ -1,6 +1,6 @@
 import time
 
-from bumblebee.host.api.commands.host_access import HostAccess
+from bumblebee.host.api.commands.convert_request_to_host import ConvertRequestToHost
 from bumblebee.host.api.commands.host_refresh import HostRefresh
 from bumblebee.host.api.commands.make_host_request import MakeHostRequest
 from bumblebee.host.api.queries.show_host_request import ShowHostRequest
@@ -33,7 +33,7 @@ class MustBeHostGuard(object):
             response = show_host_request()
 
             if response["status"] == "claimed":
-                host_access: HostAccess = resolver(HostAccess)
+                host_access: ConvertRequestToHost = resolver(ConvertRequestToHost)
 
                 host_access()
                 return

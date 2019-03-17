@@ -1,13 +1,12 @@
-from unittest.mock import MagicMock, PropertyMock
-from requests import Response
+from unittest.mock import MagicMock, Mock
 
-from bumblebee.host.api.rest import RestApi
-from bumblebee.host.api.commands.host_access import HostAccess
+from bumblebee.host.api.botqueue_api import BotQueueApi
+from bumblebee.host.api.commands.convert_request_to_host import ConvertRequestToHost
 from bumblebee.host.configurations import HostConfiguration
 from bumblebee.host.events import AuthFlowEvents
 
 
-class TestHostAccess(object):
+class TestConvertRequestToHost(object):
     def test_accepting_host_request(self, resolver, dictionary_magic, fakes_events):
         fakes_events.fake(AuthFlowEvents.HostMade)
 
@@ -16,32 +15,23 @@ class TestHostAccess(object):
 
         config["host_request_id"] = "request_id"
 
-        response = MagicMock(Response)
-
-        ok_mock = PropertyMock(return_value=True)
-        type(response).ok = ok_mock
-        response.json.return_value = {
-            "data": {
-                "access_token": "my_token",
-                "host": {
-                    "id": 1,
-                    "name": "Test Host"
-                }
+        api = Mock(BotQueueApi)
+        api.command.return_value = {
+            "access_token": "my_token",
+            "host": {
+                "id": 1,
+                "name": "Test Host"
             }
         }
-
-        api = MagicMock(RestApi)
-        api.post.return_value = response
         resolver.instance(api)
 
-        host_access = resolver(HostAccess)
+        host_access = resolver(ConvertRequestToHost)
 
         host_access()
 
-        api.post.assert_called_with("/host/requests/request_id/access")
-
-        ok_mock.assert_called()
-        response.json.assert_called()
+        api.command.assert_called_once_with("ConvertRequestToHost", {
+            "data": "request_id"
+        })
 
         assert "access_token" in config
         assert config["access_token"] == "my_token"
