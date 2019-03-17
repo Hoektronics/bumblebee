@@ -30,7 +30,7 @@ class TestConvertRequestToHost(object):
         host_access()
 
         api.command.assert_called_once_with("ConvertRequestToHost", {
-            "data": "request_id"
+            "id": "request_id"
         })
 
         assert "access_token" in config

@@ -15,9 +15,9 @@ class ConvertRequestToHost(object):
         request_id = self.config["host_request_id"]
 
         response = self.api.command("ConvertRequestToHost", {
-            "data": request_id
+            "id": request_id
         })
-        
+
         self.config["access_token"] = response["access_token"]
         self.config["id"] = response["host"]["id"]
         self.config["name"] = response["host"]["name"]
