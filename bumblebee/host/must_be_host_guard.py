@@ -2,7 +2,7 @@ import time
 
 from bumblebee.host.api.commands.convert_request_to_host import ConvertRequestToHost
 from bumblebee.host.api.commands.refresh_access_token import RefreshAccessToken
-from bumblebee.host.api.commands.make_host_request import MakeHostRequest
+from bumblebee.host.api.commands.create_host_request import CreateHostRequest
 from bumblebee.host.api.queries.show_host_request import ShowHostRequest
 from bumblebee.host.configurations import HostConfiguration
 from bumblebee.host.framework.ioc import Resolver
@@ -24,7 +24,7 @@ class MustBeHostGuard(object):
 
             return
 
-        make_host_request: MakeHostRequest = resolver(MakeHostRequest)
+        make_host_request: CreateHostRequest = resolver(CreateHostRequest)
 
         make_host_request()
 

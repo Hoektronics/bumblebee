@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 from bumblebee.host.api.commands.convert_request_to_host import ConvertRequestToHost
 from bumblebee.host.api.commands.refresh_access_token import RefreshAccessToken
-from bumblebee.host.api.commands.make_host_request import MakeHostRequest
+from bumblebee.host.api.commands.create_host_request import CreateHostRequest
 from bumblebee.host.api.queries.show_host_request import ShowHostRequest
 from bumblebee.host.configurations import HostConfiguration
 from bumblebee.host.must_be_host_guard import MustBeHostGuard
@@ -35,7 +35,7 @@ class TestMustBeHostGuard(object):
         config = dictionary_magic(MagicMock(HostConfiguration))
         resolver.instance(config)
 
-        make_host_request_mock = MagicMock(MakeHostRequest)
+        make_host_request_mock = MagicMock(CreateHostRequest)
         resolver.instance(make_host_request_mock)
         make_host_request_mock.return_value = None
 
