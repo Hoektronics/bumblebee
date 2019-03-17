@@ -1,5 +1,4 @@
 import signal
-import threading
 from threading import Thread
 
 from appdirs import AppDirs

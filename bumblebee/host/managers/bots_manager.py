@@ -3,27 +3,21 @@ from typing import List
 from deepdiff import DeepDiff
 
 from bumblebee.host.api.botqueue_api import BotQueueApi
-from bumblebee.host.api.rest import RestApi
-from bumblebee.host.events import BotEvents, JobEvents
-from bumblebee.host.framework.api.handler import Handler
-from bumblebee.host.framework.events import bind_events
+from bumblebee.host.events import BotEvents
 from bumblebee.host.framework.recurring_task import RecurringTask
-from bumblebee.host.types import Bot, Job
+from bumblebee.host.types import Job, Bot
 
 
-@bind_events
-class BotsHandler(Handler):
+class BotsManager(object):
     def __init__(self,
                  api: BotQueueApi):
         self.api = api
 
         self._bots = {}
-        self._tasks = [
-            RecurringTask(60, self.poll)
-        ]
+        self._polling_thread = RecurringTask(60, self.poll)
 
-    def tasks(self) -> List[RecurringTask]:
-        return self._tasks
+    def start(self):
+        self._polling_thread.start()
 
     def poll(self):
         response = self.api.command("GetBots")

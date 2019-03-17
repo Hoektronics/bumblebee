@@ -1,26 +1,23 @@
-from unittest.mock import MagicMock, Mock, PropertyMock
-
-from requests import Response
+from unittest.mock import Mock, MagicMock
 
 from bumblebee.host.api.botqueue_api import BotQueueApi
-from bumblebee.host.api.handlers.bots import BotsHandler
-from bumblebee.host.api.rest import RestApi
-from bumblebee.host.events import BotEvents, JobEvents
+from bumblebee.host.events import BotEvents
 from bumblebee.host.framework.recurring_task import RecurringTask
+from bumblebee.host.managers.bots_manager import BotsManager
 
 
-class TestBotsHandler(object):
-    def test_tasks_returns_polling_task(self, resolver):
-        rest = Mock(RestApi)
-        resolver.instance(rest)
+class TestBotsManager(object):
+    def test_calling_start_kicks_off_the_polling_thread(self, resolver):
+        resolver.instance(Mock(BotQueueApi))
 
-        handler = resolver(BotsHandler)
-        tasks = handler.tasks()
+        mock_polling_thread = MagicMock(RecurringTask)
 
-        assert len(tasks) == 1
-        poll_task: RecurringTask = tasks[0]
-        assert poll_task.interval == 60
-        assert poll_task.function == handler.poll
+        bots_manager: BotsManager = resolver(BotsManager)
+        bots_manager._polling_thread = mock_polling_thread
+
+        bots_manager.start()
+
+        mock_polling_thread.start.assert_called_once()
 
     def test_polling_calls_the_right_endpoint(self, resolver, fakes_events):
         fakes_events.fake(BotEvents.BotAdded)
@@ -30,8 +27,8 @@ class TestBotsHandler(object):
         api.command.return_value = []
         resolver.instance(api)
 
-        handler = resolver(BotsHandler)
-        handler.poll()
+        bots_manager: BotsManager = resolver(BotsManager)
+        bots_manager.poll()
 
         api.command.assert_called_once_with("GetBots")
 
@@ -57,8 +54,8 @@ class TestBotsHandler(object):
         resolver.instance(api)
         resolver.instance(api)
 
-        handler = resolver(BotsHandler)
-        handler.poll()
+        bots_manager: BotsManager = resolver(BotsManager)
+        bots_manager.poll()
 
         api.command.assert_called_once_with("GetBots")
 
@@ -87,9 +84,9 @@ class TestBotsHandler(object):
         ]
         resolver.instance(api)
 
-        handler = resolver(BotsHandler)
-        handler.poll()
-        handler.poll()
+        bots_manager: BotsManager = resolver(BotsManager)
+        bots_manager.poll()
+        bots_manager.poll()
 
         api.command.assert_called_with("GetBots")
 
@@ -117,9 +114,9 @@ class TestBotsHandler(object):
         ]
         resolver.instance(api)
 
-        handler = resolver(BotsHandler)
-        handler.poll()
-        handler.poll()
+        bots_manager: BotsManager = resolver(BotsManager)
+        bots_manager.poll()
+        bots_manager.poll()
 
         api.command.assert_called_with("GetBots")
 
@@ -157,10 +154,10 @@ class TestBotsHandler(object):
         ]
         resolver.instance(api)
 
-        handler = resolver(BotsHandler)
-        handler.poll()
-        handler.poll()
-        handler.poll()
+        bots_manager: BotsManager = resolver(BotsManager)
+        bots_manager.poll()
+        bots_manager.poll()
+        bots_manager.poll()
 
         api.command.assert_called_with("GetBots")
 
@@ -212,9 +209,9 @@ class TestBotsHandler(object):
         ]
         resolver.instance(api)
 
-        handler = resolver(BotsHandler)
-        handler.poll()
-        handler.poll()
+        bots_manager: BotsManager = resolver(BotsManager)
+        bots_manager.poll()
+        bots_manager.poll()
 
         api.command.assert_called_with("GetBots")
 
