@@ -2,7 +2,7 @@ from typing import List
 from unittest.mock import MagicMock, Mock
 
 from bumblebee.host.api.manager import ApiManager
-from bumblebee.host.api.socket import WebsocketApi
+from bumblebee.host.api.socket import WebSocketApi
 from bumblebee.host.configurations import HostConfiguration
 from bumblebee.host.events import AuthFlowEvents
 from bumblebee.host.framework.api.handler import Handler
@@ -25,7 +25,7 @@ class TestApiManager(object):
         config = dictionary_magic(MagicMock(HostConfiguration))
         resolver.instance(config)
 
-        socket = Mock(WebsocketApi)
+        socket = Mock(WebSocketApi)
         resolver.instance(socket)
 
         handler: FakeHandler = resolver(FakeHandler)
@@ -43,7 +43,7 @@ class TestApiManager(object):
         config = dictionary_magic(MagicMock(HostConfiguration))
         resolver.instance(config)
 
-        socket = Mock(WebsocketApi)
+        socket = Mock(WebSocketApi)
         resolver.instance(socket)
 
         handler: FakeHandler = resolver(FakeHandler)
@@ -60,7 +60,7 @@ class TestApiManager(object):
         config = dictionary_magic(MagicMock(HostConfiguration))
         resolver.instance(config)
 
-        socket = Mock(WebsocketApi)
+        socket = Mock(WebSocketApi)
         resolver.instance(socket)
 
         handler: FakeHandler = resolver(FakeHandler)
@@ -77,7 +77,7 @@ class TestApiManager(object):
         config = dictionary_magic(MagicMock(HostConfiguration))
         resolver.instance(config)
 
-        socket = Mock(WebsocketApi)
+        socket = Mock(WebSocketApi)
         resolver.instance(socket)
 
         handler_a: FakeHandler = resolver(FakeHandler)
@@ -101,7 +101,7 @@ class TestApiManager(object):
 
         config["id"] = 1
 
-        socket = Mock(WebsocketApi)
+        socket = Mock(WebSocketApi)
         resolver.instance(socket)
 
         resolver(ApiManager)
@@ -112,7 +112,7 @@ class TestApiManager(object):
         config = dictionary_magic(MagicMock(HostConfiguration))
         resolver.instance(config)
 
-        socket = Mock(WebsocketApi)
+        socket = Mock(WebSocketApi)
         resolver.instance(socket)
 
         resolver(ApiManager)

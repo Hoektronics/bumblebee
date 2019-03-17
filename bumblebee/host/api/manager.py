@@ -1,5 +1,5 @@
 from bumblebee.host import on
-from bumblebee.host.api.socket import WebsocketApi
+from bumblebee.host.api.socket import WebSocketApi
 from bumblebee.host.configurations import HostConfiguration
 from bumblebee.host.events import AuthFlowEvents
 from bumblebee.host.framework.events import bind_events
@@ -9,7 +9,7 @@ from bumblebee.host.framework.events import bind_events
 class ApiManager(object):
     def __init__(self,
                  config: HostConfiguration,
-                 socket: WebsocketApi):
+                 socket: WebSocketApi):
         self.config = config
         self.socket = socket
 
