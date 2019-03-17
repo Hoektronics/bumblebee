@@ -2,6 +2,7 @@ from unittest.mock import MagicMock, Mock, PropertyMock
 
 from requests import Response
 
+from bumblebee.host.api.botqueue_api import BotQueueApi
 from bumblebee.host.api.handlers.bots import BotsHandler
 from bumblebee.host.api.rest import RestApi
 from bumblebee.host.events import BotEvents, JobEvents
@@ -25,23 +26,14 @@ class TestBotsHandler(object):
         fakes_events.fake(BotEvents.BotAdded)
         fakes_events.fake(BotEvents.BotRemoved)
 
-        rest = Mock(RestApi)
-        rest.with_token.return_value = rest
-        response = MagicMock(Response)
-        rest.get.return_value = response
-
-        ok_mock = PropertyMock(return_value=True)
-        type(response).ok = ok_mock
-        response.json.return_value = {
-            "data": []
-        }
-        resolver.instance(rest)
+        api = Mock(BotQueueApi)
+        api.command.return_value = []
+        resolver.instance(api)
 
         handler = resolver(BotsHandler)
         handler.poll()
 
-        rest.with_token.assert_called_once()
-        rest.get.assert_called_once_with("/host/bots")
+        api.command.assert_called_once_with("GetBots")
 
         assert not fakes_events.fired(BotEvents.BotAdded)
         assert not fakes_events.fired(BotEvents.BotRemoved)
@@ -50,33 +42,25 @@ class TestBotsHandler(object):
         fakes_events.fake(BotEvents.BotAdded)
         fakes_events.fake(BotEvents.BotRemoved)
 
-        rest = Mock(RestApi)
-        rest.with_token.return_value = rest
-        response = MagicMock(Response)
-        rest.get.return_value = response
-
-        ok_mock = PropertyMock(return_value=True)
-        type(response).ok = ok_mock
-        response.json.return_value = {
-            "data": [
-                {
-                    "id": 1,
-                    "name": "Test bot",
-                    "type": "3d_printer",
-                    "status": "Offline",
-                    "driver": {
-                        "type": "dummy"
-                    }
+        api = Mock(BotQueueApi)
+        api.command.return_value = [
+            {
+                "id": 1,
+                "name": "Test bot",
+                "type": "3d_printer",
+                "status": "Offline",
+                "driver": {
+                    "type": "dummy"
                 }
-            ]
-        }
-        resolver.instance(rest)
+            }
+        ]
+        resolver.instance(api)
+        resolver.instance(api)
 
         handler = resolver(BotsHandler)
         handler.poll()
 
-        rest.with_token.assert_called_once()
-        rest.get.assert_called_once_with("/host/bots")
+        api.command.assert_called_once_with("GetBots")
 
         bot_added_event_assertion = fakes_events.fired(BotEvents.BotAdded)
         assert bot_added_event_assertion.once()
@@ -94,36 +78,20 @@ class TestBotsHandler(object):
         fakes_events.fake(BotEvents.BotAdded)
         fakes_events.fake(BotEvents.BotRemoved)
 
-        rest = Mock(RestApi)
-        rest.with_token.return_value = rest
-
-        response = MagicMock(Response)
-        rest.get.return_value = response
-
-        ok_mock = PropertyMock(return_value=True)
-        type(response).ok = ok_mock
-
         bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "Offline", "driver": None}
-        response.json.side_effect = [
-            {
-                "data": [
-                    bot
-                ]
-            },
-            {
-                "data": [
-                    bot
-                ]
-            }
+
+        api = Mock(BotQueueApi)
+        api.command.side_effect = [
+            [bot],
+            [bot]
         ]
-        resolver.instance(rest)
+        resolver.instance(api)
 
         handler = resolver(BotsHandler)
         handler.poll()
         handler.poll()
 
-        rest.with_token.assert_called()
-        rest.get.assert_called_with("/host/bots")
+        api.command.assert_called_with("GetBots")
 
         bot_added_event_assertion = fakes_events.fired(BotEvents.BotAdded)
         assert bot_added_event_assertion.once()
@@ -141,33 +109,19 @@ class TestBotsHandler(object):
         fakes_events.fake(BotEvents.BotAdded)
         fakes_events.fake(BotEvents.BotRemoved)
 
-        rest = Mock(RestApi)
-        rest.with_token.return_value = rest
-        response = MagicMock(Response)
-        rest.get.return_value = response
-
-        ok_mock = PropertyMock(return_value=True)
-        type(response).ok = ok_mock
-
         bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "Offline", "driver": None}
-        response.json.side_effect = [
-            {
-                "data": [
-                    bot
-                ]
-            },
-            {
-                "data": []
-            }
+        api = Mock(BotQueueApi)
+        api.command.side_effect = [
+            [bot],
+            []
         ]
-        resolver.instance(rest)
+        resolver.instance(api)
 
         handler = resolver(BotsHandler)
         handler.poll()
         handler.poll()
 
-        rest.with_token.assert_called()
-        rest.get.assert_called_with("/host/bots")
+        api.command.assert_called_with("GetBots")
 
         bot_added_event_assertion = fakes_events.fired(BotEvents.BotAdded)
         assert bot_added_event_assertion.once()
@@ -194,39 +148,21 @@ class TestBotsHandler(object):
         fakes_events.fake(BotEvents.BotAdded)
         fakes_events.fake(BotEvents.BotRemoved)
 
-        rest = Mock(RestApi)
-        rest.with_token.return_value = rest
-        response = MagicMock(Response)
-        rest.get.return_value = response
-
-        ok_mock = PropertyMock(return_value=True)
-        type(response).ok = ok_mock
-
         bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "Offline", "driver": None}
-        response.json.side_effect = [
-            {
-                "data": [
-                    bot
-                ]
-            },
-            {
-                "data": []
-            },
-            {
-                "data": [
-                    bot
-                ]
-            }
+        api = Mock(BotQueueApi)
+        api.command.side_effect = [
+            [bot],
+            [],
+            [bot]
         ]
-        resolver.instance(rest)
+        resolver.instance(api)
 
         handler = resolver(BotsHandler)
         handler.poll()
         handler.poll()
         handler.poll()
 
-        rest.with_token.assert_called()
-        rest.get.assert_called_with("/host/bots")
+        api.command.assert_called_with("GetBots")
 
         bot_added_event_assertion = fakes_events.fired(BotEvents.BotAdded)
         assert bot_added_event_assertion.times(2)
@@ -253,46 +189,34 @@ class TestBotsHandler(object):
         fakes_events.fake(BotEvents.BotAdded)
         fakes_events.fake(BotEvents.BotUpdated)
 
-        rest = Mock(RestApi)
-        rest.with_token.return_value = rest
-        response = MagicMock(Response)
-        rest.get.return_value = response
-
-        ok_mock = PropertyMock(return_value=True)
-        type(response).ok = ok_mock
-
-        response.json.side_effect = [
-            {
-                "data": [
-                    {
-                        "id": 1,
-                        "name": "Test bot",
-                        "type": "3d_printer",
-                        "status": "Offline",
-                        "driver": None
-                    }
-                ]
-            },
-            {
-                "data": [
-                    {
-                        "id": 1,
-                        "name": "Test bot",
-                        "type": "3d_printer",
-                        "status": "Idle",
-                        "driver": None
-                    }
-                ]
-            }
+        api = Mock(BotQueueApi)
+        api.command.side_effect = [
+            [
+                {
+                    "id": 1,
+                    "name": "Test bot",
+                    "type": "3d_printer",
+                    "status": "Offline",
+                    "driver": None
+                }
+            ],
+            [
+                {
+                    "id": 1,
+                    "name": "Test bot",
+                    "type": "3d_printer",
+                    "status": "Idle",
+                    "driver": None
+                }
+            ]
         ]
-        resolver.instance(rest)
+        resolver.instance(api)
 
         handler = resolver(BotsHandler)
         handler.poll()
         handler.poll()
 
-        rest.with_token.assert_called()
-        rest.get.assert_called_with("/host/bots")
+        api.command.assert_called_with("GetBots")
 
         bot_added_event_assertion = fakes_events.fired(BotEvents.BotAdded)
         assert bot_added_event_assertion.once()
