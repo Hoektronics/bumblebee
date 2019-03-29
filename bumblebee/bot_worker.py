@@ -1,5 +1,6 @@
 import json
-from threading import Thread
+import time
+from threading import Thread, Event
 
 from bumblebee.host import on
 from bumblebee.host.api.commands.finish_job import FinishJob
@@ -9,7 +10,7 @@ from bumblebee.host.drivers.driver_factory import DriverFactory
 from bumblebee.host.events import JobEvents, BotEvents
 from bumblebee.host.framework.events import bind_events, EventManager
 from bumblebee.host.framework.ioc import Resolver
-from bumblebee.host.types import Bot
+from bumblebee.host.types import Bot, Job
 
 
 def _handle_job_assignment(bot: Bot):
@@ -25,23 +26,33 @@ def _handle_job_assignment(bot: Bot):
 class BotWorker(object):
     def __init__(self,
                  bot: Bot,
-                 resolver: Resolver,
-                 event_manager: EventManager):
+                 resolver: Resolver, ):
         self.bot = bot
         self.resolver = resolver
 
-        self._current_job = None
-        self._thread = None
+        self.driver = None
+        self._handle_driver()
 
-        # Bind manually, otherwise JobAssigned won't be bound to this
-        # instance when we need it in the _handle_job_assignment call
-        event_manager.bind(self)
+        self._current_job: Job = None
+        self._thread = Thread(target=self._run, daemon=True)
+        self._worker_should_be_stopped = Event()
+        self._thread.start()
 
-        _handle_job_assignment(bot)
+    def stop(self):
+        self._worker_should_be_stopped.set()
+        self._thread.join(1)
+        if self.driver is not None:
+            self.driver.disconnect()
+
+    def _handle_driver(self):
+        if self.bot.driver is not None:
+            self.driver = self.resolver(DriverFactory).get(self.bot.driver)
+            self.driver.connect()
 
     @on(BotEvents.BotUpdated)
     def _bot_updated(self, event: BotEvents.BotUpdated):
         bot = event.bot
+        self._handle_driver()
         _handle_job_assignment(bot)
 
     @on(JobEvents.JobAssigned)
@@ -49,34 +60,33 @@ class BotWorker(object):
         if self.bot.id != event.bot.id:
             return
 
-        url = event.job.file_url
+        self._current_job = event.job
 
-        downloader = self.resolver(Downloader)
-        print(f"Downloading {url}")
-        filename = downloader.download(url)
-        print("Downloaded")
+    def _run(self):
+        # Bind manually, otherwise JobAssigned won't be bound to this
+        # instance when we need it in the _handle_job_assignment call
+        event_manager = self.resolver(EventManager)
+        event_manager.bind(self)
 
-        driver_factory: DriverFactory = self.resolver(DriverFactory)
-        driver = driver_factory.get(json.loads(event.bot.driver))
+        _handle_job_assignment(self.bot)
 
-        job_execution = JobExecution(event.job.id, filename, driver, self.resolver)
+        while not self._worker_should_be_stopped.is_set():
+            if self._current_job is not None:
+                url = self._current_job.file_url
 
-        self._thread = Thread(target=job_execution.run)
-        self._thread.start()
+                downloader = self.resolver(Downloader)
+                print(f"Downloading {url}")
+                filename = downloader.download(url)
+                print("Downloaded")
 
+                start_job_command = self.resolver(StartJob)
+                start_job_command(self._current_job.id)
 
-class JobExecution(object):
-    def __init__(self, job_id, filename, driver, resolver):
-        self.job_id = job_id
-        self.filename = filename
-        self.driver = driver
-        self.resolver = resolver
+                self.driver.run(filename)
 
-    def run(self):
-        start_job_command = self.resolver(StartJob)
-        start_job_command(self.job_id)
+                finish_job_command = self.resolver(FinishJob)
+                finish_job_command(self._current_job.id)
 
-        self.driver.run(self.filename)
-
-        finish_job_command = self.resolver(FinishJob)
-        finish_job_command(self.job_id)
+                self._current_job = None
+            else:
+                time.sleep(0.05)

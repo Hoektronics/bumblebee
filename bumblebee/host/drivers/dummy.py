@@ -8,6 +8,12 @@ class DummyDriver(object):
         if config is not None and "command_delay" in config:
             self.command_delay = config["command_delay"]
 
+    def connect(self):
+        pass
+
+    def disconnect(self):
+        pass
+
     def run(self, filename):
         print(f"Executing {filename}")
         with open(filename, 'rb') as fh:
