@@ -1,5 +1,5 @@
 from bumblebee.host.drivers.dummy import DummyDriver
-from bumblebee.host.drivers.printrun import PrintrunDriver
+from bumblebee.host.drivers.gcode import GcodeDriver
 from bumblebee.host.framework.ioc import Resolver
 
 
@@ -26,4 +26,4 @@ class DriverFactory(object):
             return self.resolver(DummyDriver, config=driver_config)
 
         if driver_type == "gcode":
-            return self.resolver(PrintrunDriver, config=driver_config)
+            return self.resolver(GcodeDriver, config=driver_config)

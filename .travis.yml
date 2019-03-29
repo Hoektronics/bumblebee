@@ -10,6 +10,7 @@ notifications:
 branches:
   only:
     - v2.0-dev
+    - new_gcode_driver
 
 script:
   - python setup.py test

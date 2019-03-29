@@ -2,7 +2,7 @@ import pytest
 
 from bumblebee.host.drivers.driver_factory import DriverFactory, InvalidDriver
 from bumblebee.host.drivers.dummy import DummyDriver
-from bumblebee.host.drivers.printrun import PrintrunDriver
+from bumblebee.host.drivers.gcode import GcodeDriver
 
 
 class TestDriverFactory(object):
@@ -43,7 +43,7 @@ class TestDriverFactory(object):
     def test_driver_string_gcode_gives_printrun_driver(self, resolver):
         factory = resolver(DriverFactory)
 
-        driver: PrintrunDriver = factory.get({
+        driver: GcodeDriver = factory.get({
             "type": "gcode",
             "config": {
                 "connection": {
@@ -53,14 +53,14 @@ class TestDriverFactory(object):
             }
         })
 
-        assert isinstance(driver, PrintrunDriver)
+        assert isinstance(driver, GcodeDriver)
         assert driver.serial_port == "/dev/testSerial"
         assert driver.baud_rate is None
 
     def test_printrun_driver_will_populate_baud_rate(self, resolver):
         factory = resolver(DriverFactory)
 
-        driver: PrintrunDriver = factory.get({
+        driver: GcodeDriver = factory.get({
             "type": "gcode",
             "config": {
                 "connection": {
@@ -71,6 +71,6 @@ class TestDriverFactory(object):
             }
         })
 
-        assert isinstance(driver, PrintrunDriver)
+        assert isinstance(driver, GcodeDriver)
         assert driver.serial_port == "/dev/testSerial"
         assert driver.baud_rate == 250000
