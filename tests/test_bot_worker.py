@@ -1,5 +1,4 @@
-import json
-from unittest.mock import Mock, MagicMock
+from unittest.mock import MagicMock, Mock, call
 
 import pytest
 
@@ -9,6 +8,7 @@ from bumblebee.host.api.commands.start_job import StartJob
 from bumblebee.host.downloader import Downloader
 from bumblebee.host.drivers.driver_factory import DriverFactory
 from bumblebee.host.drivers.dummy import DummyDriver
+from bumblebee.host.drivers.printrun import PrintrunDriver
 from bumblebee.host.events import JobEvents, BotEvents
 from bumblebee.host.types import Bot, Job
 
@@ -253,3 +253,105 @@ class TestBotWorker(object):
         finish_job.assert_called_once_with(job.id)
 
         dummy_driver.disconnect.assert_called_once()
+
+    def test_bot_updated_does_not_force_driver_reconnect(self, resolver):
+        driver_factory = MagicMock(DriverFactory)
+        resolver.instance(driver_factory)
+
+        driver_config = {
+            "type": "gcode",
+            "config": {
+                "connection": {
+                    "port": "test-port",
+                    "baud": 115200
+                }
+            }
+        }
+        bot = Bot(
+            id=1,
+            name="Test Bot",
+            status="job_assigned",
+            type="3d_printer",
+            driver=driver_config
+        )
+
+        worker: BotWorker = resolver(BotWorker, bot=bot)
+
+        bot.status = "working"
+
+        BotEvents.BotUpdated(bot).fire()
+
+        worker.stop()
+
+        driver_factory.get.assert_called_once_with(driver_config)
+
+    def test_bot_updated_calls_disconnect_first_if_driver_changes(self, resolver):
+        driver_factory = MagicMock(DriverFactory)
+        resolver.instance(driver_factory)
+
+        driver_config_with_slow_baudrate = {
+            "type": "gcode",
+            "config": {
+                "connection": {
+                    "port": "test-port",
+                    "baud": 115200
+                }
+            }
+        }
+
+        driver_config_with_fast_baudrate = {
+            "type": "gcode",
+            "config": {
+                "connection": {
+                    "port": "test-port",
+                    "baud": 250000
+                }
+            }
+        }
+
+        gcode_driver_slow = Mock(PrintrunDriver)
+        resolver.instance(gcode_driver_slow)
+        gcode_driver_fast = Mock(PrintrunDriver)
+        resolver.instance(gcode_driver_fast)
+
+        manager = Mock()
+        manager.attach_mock(gcode_driver_slow, 'slow')
+        manager.attach_mock(gcode_driver_fast, 'fast')
+
+        def return_correct_driver(config):
+            if config == driver_config_with_slow_baudrate:
+                return gcode_driver_slow
+            if config == driver_config_with_fast_baudrate:
+                return gcode_driver_fast
+            pytest.fail(f"Bad config passed for getting the driver: {config}")
+
+        driver_factory.get.side_effect = return_correct_driver
+
+        bot = Bot(
+            id=1,
+            name="Test Bot",
+            status="job_assigned",
+            type="3d_printer",
+            driver=driver_config_with_slow_baudrate
+        )
+
+        worker: BotWorker = resolver(BotWorker, bot=bot)
+
+        new_bot = Bot(
+            id=1,
+            name="Test Bot",
+            status="job_assigned",
+            type="3d_printer",
+            driver=driver_config_with_fast_baudrate
+        )
+
+        BotEvents.BotUpdated(new_bot).fire()
+
+        worker.stop()
+
+        manager.assert_has_calls([
+            call.slow.connect(),
+            call.slow.disconnect(),
+            call.fast.connect(),
+            call.fast.disconnect(),
+        ])

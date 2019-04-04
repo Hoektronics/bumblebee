@@ -30,6 +30,7 @@ class BotWorker(object):
         self.bot = bot
         self.resolver = resolver
 
+        self.driver_config = None
         self.driver = None
         self._handle_driver()
 
@@ -46,14 +47,22 @@ class BotWorker(object):
 
     def _handle_driver(self):
         if self.bot.driver is not None:
-            self.driver = self.resolver(DriverFactory).get(self.bot.driver)
+            if self.driver_config == self.bot.driver:
+                return
+            else:
+                self.driver_config = self.bot.driver
+
+                if self.driver is not None:
+                    self.driver.disconnect()
+
+            self.driver = self.resolver(DriverFactory).get(self.driver_config)
             self.driver.connect()
 
     @on(BotEvents.BotUpdated)
     def _bot_updated(self, event: BotEvents.BotUpdated):
-        bot = event.bot
+        self.bot = event.bot
         self._handle_driver()
-        _handle_job_assignment(bot)
+        _handle_job_assignment(self.bot)
 
     @on(JobEvents.JobAssigned)
     def job_assigned(self, event: JobEvents.JobAssigned):
