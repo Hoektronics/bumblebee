@@ -1,3 +1,6 @@
+import json
+
+
 class User(object):
     def __init__(self,
                  id: int,
@@ -47,4 +50,9 @@ class Bot(object):
         self.status = status
         self.type = type
         self.current_job = current_job
+
+        if driver is not None \
+                and not isinstance(driver, dict) \
+                and isinstance(driver, str):
+            driver = json.loads(driver)
         self.driver = driver

@@ -1,3 +1,4 @@
+import json
 from unittest.mock import Mock, MagicMock
 
 from bumblebee.host.api.botqueue_api import BotQueueApi
@@ -52,6 +53,40 @@ class TestBotsManager(object):
             }
         ]
         resolver.instance(api)
+
+        bots_manager: BotsManager = resolver(BotsManager)
+        bots_manager.poll()
+
+        api.command.assert_called_once_with("GetBots")
+
+        bot_added_event_assertion = fakes_events.fired(BotEvents.BotAdded)
+        assert bot_added_event_assertion.once()
+        assert not fakes_events.fired(BotEvents.BotRemoved)
+
+        event: BotEvents.BotAdded = bot_added_event_assertion.event
+        assert event.bot.id == 1
+        assert event.bot.name == "Test bot"
+        assert event.bot.status == "Offline"
+        assert event.bot.type == "3d_printer"
+        assert event.bot.driver == {"type": "dummy"}
+        assert event.bot.current_job is None
+
+    def test_decoding_serialized_driver(self, resolver, fakes_events):
+        fakes_events.fake(BotEvents.BotAdded)
+        fakes_events.fake(BotEvents.BotRemoved)
+
+        api = Mock(BotQueueApi)
+        api.command.return_value = [
+            {
+                "id": 1,
+                "name": "Test bot",
+                "type": "3d_printer",
+                "status": "Offline",
+                "driver": json.dumps({
+                    "type": "dummy"
+                })
+            }
+        ]
         resolver.instance(api)
 
         bots_manager: BotsManager = resolver(BotsManager)
