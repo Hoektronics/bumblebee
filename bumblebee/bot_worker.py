@@ -1,10 +1,10 @@
-import json
 import time
 from threading import Thread, Event
 
 from bumblebee.host import on
 from bumblebee.host.api.commands.finish_job import FinishJob
 from bumblebee.host.api.commands.start_job import StartJob
+from bumblebee.host.api.commands.update_job_progress import UpdateJobProgress
 from bumblebee.host.downloader import Downloader
 from bumblebee.host.drivers.driver_factory import DriverFactory
 from bumblebee.host.events import JobEvents, BotEvents
@@ -26,7 +26,7 @@ def _handle_job_assignment(bot: Bot):
 class BotWorker(object):
     def __init__(self,
                  bot: Bot,
-                 resolver: Resolver, ):
+                 resolver: Resolver):
         self.bot = bot
         self.resolver = resolver
 
@@ -70,6 +70,10 @@ class BotWorker(object):
 
         self._current_job = event.job
 
+    def _update_job_progress(self, progress):
+        update_job_progress = self.resolver(UpdateJobProgress)
+        update_job_progress(self._current_job.id, progress)
+
     def _run(self):
         # Bind manually, otherwise JobAssigned won't be bound to this
         # instance when we need it in the _handle_job_assignment call
@@ -92,7 +96,8 @@ class BotWorker(object):
                 start_job_command = self.resolver(StartJob)
                 start_job_command(self._current_job.id)
 
-                self.driver.run(filename)
+                self.driver.run(filename,
+                                update_job_progress=self._update_job_progress)
 
                 finish_job_command = self.resolver(FinishJob)
                 finish_job_command(self._current_job.id)

@@ -24,7 +24,12 @@ class PrintrunDriver(object):
     def disconnect(self):
         self.printcore.disconnect()
 
-    def run(self, filename):
+    def run(self, filename, **kwargs):
+        if "update_job_progress" in kwargs:
+            update_job_progress = kwargs["update_job_progress"]
+        else:
+            update_job_progress = None
+
         with open(filename, 'rb') as fh:
             gcode = [i.strip().decode("utf-8") for i in fh.readlines()]
 
@@ -34,3 +39,7 @@ class PrintrunDriver(object):
 
         while self.printcore.printing:
             time.sleep(5)
+
+            progress = 100.0 * (float(self.printcore.queueindex) / float(len(self.printcore.mainqueue)))
+            if update_job_progress is not None:
+                update_job_progress(progress)

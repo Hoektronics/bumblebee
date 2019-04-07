@@ -248,8 +248,10 @@ class TestBotWorker(object):
 
         worker.stop()
 
-        start_job.assert_called_once_with(job.id)
         downloader.download.assert_called_once_with(job.file_url)
+        start_job.assert_called_once_with(job.id)
+        dummy_driver.run.assert_called_once_with("foo.gcode",
+                                                 update_job_progress=worker._update_job_progress)
         finish_job.assert_called_once_with(job.id)
 
         dummy_driver.disconnect.assert_called_once()
