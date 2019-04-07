@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, Mock
 
 from bumblebee.host.api.botqueue_api import BotQueueApi
-from bumblebee.host.api.queries.get_host_request import GetHostRequest
+from bumblebee.host.api.commands.get_host_request import GetHostRequest
 from bumblebee.host.configurations import HostConfiguration
 
 

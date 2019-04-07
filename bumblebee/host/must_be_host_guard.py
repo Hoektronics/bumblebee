@@ -3,7 +3,7 @@ import time
 from bumblebee.host.api.commands.convert_request_to_host import ConvertRequestToHost
 from bumblebee.host.api.commands.refresh_access_token import RefreshAccessToken
 from bumblebee.host.api.commands.create_host_request import CreateHostRequest
-from bumblebee.host.api.queries.get_host_request import GetHostRequest
+from bumblebee.host.api.commands.get_host_request import GetHostRequest
 from bumblebee.host.configurations import HostConfiguration
 from bumblebee.host.framework.ioc import Resolver
 
