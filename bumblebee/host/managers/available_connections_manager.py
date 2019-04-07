@@ -1,3 +1,4 @@
+from deepdiff import DeepDiff
 from serial.tools.list_ports import comports
 
 from bumblebee.host.api.botqueue_api import BotQueueApi
@@ -10,6 +11,7 @@ class AvailableConnectionsManager(object):
         self.api = api
 
         self._polling_thread = RecurringTask(5 * 60, self.poll)
+        self._last_known_connections = {}
 
     def start(self):
         self._polling_thread.start()
@@ -17,9 +19,14 @@ class AvailableConnectionsManager(object):
     def poll(self):
         ports = comports()
 
-        available_connections = map(lambda port_info: {
+        available_connections = list(map(lambda port_info: {
             "type": "serial",
             "port": port_info.device
-        }, ports)
+        }, ports))
 
-        self.api.command("UpdateAvailableConnections", list(available_connections))
+        diff = DeepDiff(self._last_known_connections, available_connections)
+
+        if diff:
+            self.api.command("UpdateAvailableConnections", available_connections)
+
+        self._last_known_connections = available_connections
