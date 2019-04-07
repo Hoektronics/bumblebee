@@ -32,7 +32,6 @@ class BotWorker(object):
 
         self.driver_config = None
         self.driver = None
-        self._handle_driver()
 
         self._current_job: Job = None
         self._thread = Thread(target=self._run, daemon=True)
@@ -76,6 +75,8 @@ class BotWorker(object):
         # instance when we need it in the _handle_job_assignment call
         event_manager = self.resolver(EventManager)
         event_manager.bind(self)
+
+        self._handle_driver()
 
         _handle_job_assignment(self.bot)
 
