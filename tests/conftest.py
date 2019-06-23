@@ -1,6 +1,9 @@
-from unittest.mock import MagicMock
+import os
+import tempfile
+from unittest.mock import MagicMock, Mock
 
 import pytest
+from appdirs import AppDirs
 
 from bumblebee.host.framework.events import Event, EventManager
 from bumblebee.host.framework.ioc import Resolver
@@ -9,8 +12,31 @@ from bumblebee.host.framework.ioc import Resolver
 @pytest.fixture
 def resolver():
     Resolver.reset()
+    resolver = Resolver.get()
 
-    return Resolver.get()
+    resolver.singleton(AppDirs, mock_appdirs)
+
+    return resolver
+
+
+def mock_appdirs():
+    appdirs_mock = Mock(AppDirs)
+    appdirs_mock.user_config_dir = os.path.join(tempfile.mkdtemp(), 'user_config_dir')
+    appdirs_mock.user_log_dir = os.path.join(tempfile.mkdtemp(), 'user_log_dir')
+
+    return appdirs_mock
+
+
+@pytest.fixture
+def user_config_dir(resolver):
+    appdirs: AppDirs = resolver(AppDirs)
+    return appdirs.user_config_dir
+
+
+@pytest.fixture
+def user_log_dir(resolver):
+    appdirs: AppDirs = resolver(AppDirs)
+    return appdirs.user_log_dir
 
 
 @pytest.fixture

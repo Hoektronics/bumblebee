@@ -1,19 +1,8 @@
-import os
-import tempfile
-from unittest.mock import Mock
-
-from appdirs import AppDirs
-
 from bumblebee.host.framework.configuration import Configuration
 
 
 class TestConfiguration(object):
     def test_can_work_with_keys(self, resolver):
-        app_mock = Mock(AppDirs)
-
-        resolver.instance(AppDirs, app_mock)
-        app_mock.user_config_dir = tempfile.mkdtemp()
-
         config = Configuration("test")
 
         assert "key" not in config
@@ -28,11 +17,6 @@ class TestConfiguration(object):
         assert "key" not in config
 
     def test_configuration_auto_saves_on_set(self, resolver):
-        app_mock = Mock(AppDirs)
-
-        resolver.instance(AppDirs, app_mock)
-        app_mock.user_config_dir = tempfile.mkdtemp()
-
         config_first = Configuration("test")
 
         assert "key" not in config_first
@@ -43,11 +27,6 @@ class TestConfiguration(object):
         assert config_second["key"] == "value"
 
     def test_configuration_auto_saves_on_delete(self, resolver):
-        app_mock = Mock(AppDirs)
-
-        resolver.instance(AppDirs, app_mock)
-        app_mock.user_config_dir = tempfile.mkdtemp()
-
         config_first = Configuration("test")
 
         assert "key" not in config_first
@@ -59,11 +38,6 @@ class TestConfiguration(object):
         assert "key" not in config_second
 
     def test_will_make_directory_if_non_existent(self, resolver):
-        app_mock = Mock(AppDirs)
-
-        resolver.instance(AppDirs, app_mock)
-        app_mock.user_config_dir = os.path.join(tempfile.mkdtemp(), 'some_sub_dir')
-
         config_first = Configuration("test")
 
         assert "key" not in config_first
