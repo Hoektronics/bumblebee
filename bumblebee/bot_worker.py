@@ -10,6 +10,7 @@ from bumblebee.host.drivers.driver_factory import DriverFactory
 from bumblebee.host.events import JobEvents, BotEvents
 from bumblebee.host.framework.events import bind_events, EventManager
 from bumblebee.host.framework.ioc import Resolver
+from bumblebee.host.framework.logging import HostLogging
 from bumblebee.host.types import Bot, Job
 
 
@@ -26,9 +27,11 @@ def _handle_job_assignment(bot: Bot):
 class BotWorker(object):
     def __init__(self,
                  bot: Bot,
-                 resolver: Resolver):
+                 resolver: Resolver,
+                 host_logging: HostLogging):
         self.bot = bot
         self.resolver = resolver
+        self.log = host_logging.get_logger(f"BotWorker:{bot.id}")
 
         self.driver_config = None
         self.driver = None
@@ -86,18 +89,21 @@ class BotWorker(object):
 
         while not self._worker_should_be_stopped.is_set():
             if self._current_job is not None:
+                self.log.info(f"Starting on job {self._current_job.id}")
                 url = self._current_job.file_url
 
                 downloader = self.resolver(Downloader)
-                print(f"Downloading {url}")
+                self.log.info(f"Downloading {url}")
                 filename = downloader.download(url)
-                print("Downloaded")
+                self.log.info(f"Downloaded {url} to {filename}")
 
                 start_job_command = self.resolver(StartJob)
                 start_job_command(self._current_job.id)
 
+                self.log.info("Calling driver's run method")
                 self.driver.run(filename,
                                 update_job_progress=self._update_job_progress)
+                self.log.info("Driver's run method returned")
 
                 finish_job_command = self.resolver(FinishJob)
                 finish_job_command(self._current_job.id)

@@ -5,13 +5,16 @@ from bumblebee.host.events import HostEvents, AuthFlowEvents
 from bumblebee.host.events import BotEvents
 from bumblebee.host.framework.events import bind_events
 from bumblebee.host.framework.ioc import Resolver
+from bumblebee.host.framework.logging import HostLogging
 
 
 @bind_events
 class BQClient(object):
     def __init__(self,
-                 resolver: Resolver):
+                 resolver: Resolver,
+                 host_logging: HostLogging):
         self.resolver = resolver
+        self.log = host_logging.get_logger('BQClient')
         self._workers = {}
 
     @on(AuthFlowEvents.HostRequestMade)
@@ -27,20 +30,19 @@ class BQClient(object):
 
     @on(HostEvents.Startup)
     def _start(self):
-        print("Host startup!")
+        self.log.info("Host startup!")
 
     @on(HostEvents.Shutdown)
     def _shutdown(self):
-        print("Host shutdown!")
+        self.log.info("Host shutdown!")
 
     @on(BotEvents.BotAdded)
     def _bot_added(self, event: BotEvents.BotAdded):
-        print("Adding bot worker:", event.bot.name)
+        self.log.info(f"Adding bot worker: {event.bot.name}")
         worker = self.resolver(BotWorker, bot=event.bot)
 
         self._workers[event.bot.id] = worker
 
     @on(BotEvents.BotRemoved)
     def _bot_removed(self, event):
-        print("Bot removed! :(")
-        print(event.bot)
+        self.log.info("Bot removed! :(")

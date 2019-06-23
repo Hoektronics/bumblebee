@@ -7,10 +7,12 @@ from appdirs import AppDirs
 class HostLogging(object):
     def __init__(self,
                  app_dirs: AppDirs):
+        os.makedirs(app_dirs.user_log_dir, exist_ok=True)
         self._host_log_path = os.path.join(app_dirs.user_log_dir, 'host.log')
 
     def get_logger(self, name):
         logger = logging.getLogger(name)
+        logger.propagate = False
         logger.setLevel(logging.DEBUG)
 
         matching_file_handlers = [

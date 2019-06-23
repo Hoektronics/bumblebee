@@ -6,8 +6,7 @@ import requests
 
 class Downloader(object):
     def __init__(self,
-                 app_dirs: AppDirs
-                 ):
+                 app_dirs: AppDirs):
         self.app_dirs = app_dirs
 
     def download(self, url):
@@ -19,7 +18,5 @@ class Downloader(object):
         with requests.get(url) as http_request:
             with open(file_name, 'wb') as fh:
                 fh.write(http_request.content)
-
-        print(f"{url} written to {file_name}")
 
         return file_name
