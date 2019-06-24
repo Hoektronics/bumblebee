@@ -26,7 +26,10 @@ setup(name="bqclient",
       url="http://github.com/Hoektronics/bumblebee/",
       packages=find_packages(),
       entry_points={
-          "console_scripts": ["bumblebee = bumblebee.__main__:main"]
+          "console_scripts": [
+              "bumblebee = bumblebee.__main__:main",
+              "bqclient = bumblebee.__main__:main"
+          ]
       },
       setup_requires=[
           "pytest-runner"
