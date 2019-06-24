@@ -2,9 +2,11 @@ import time
 from threading import Thread, Event
 
 from bumblebee.host import on
+from bumblebee.host.api.botqueue_api import ErrorResponse
 from bumblebee.host.api.commands.finish_job import FinishJob
 from bumblebee.host.api.commands.start_job import StartJob
 from bumblebee.host.api.commands.update_job_progress import UpdateJobProgress
+from bumblebee.host.api.errors import Errors
 from bumblebee.host.downloader import Downloader
 from bumblebee.host.drivers.driver_factory import DriverFactory
 from bumblebee.host.events import JobEvents, BotEvents
@@ -74,8 +76,15 @@ class BotWorker(object):
         self._current_job = event.job
 
     def _update_job_progress(self, progress):
-        update_job_progress = self.resolver(UpdateJobProgress)
-        update_job_progress(self._current_job.id, progress)
+        try:
+            update_job_progress = self.resolver(UpdateJobProgress)
+            update_job_progress(self._current_job.id, progress)
+        except ErrorResponse as e:
+            if e.code == Errors.jobPercentageCanOnlyIncrease:
+                self.log.info(f"Tried to set progress to {progress}, but the API says it's already higher")
+            else:
+                raise e
+
 
     def _run(self):
         # Bind manually, otherwise JobAssigned won't be bound to this
