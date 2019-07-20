@@ -43,6 +43,8 @@ class BotWorker(object):
         self._worker_should_be_stopped = Event()
         self._thread.start()
 
+        self._last_progress_update = 0
+
     def stop(self):
         self._worker_should_be_stopped.set()
         self._thread.join(1)
@@ -76,6 +78,9 @@ class BotWorker(object):
         self._current_job = event.job
 
     def _update_job_progress(self, progress):
+        if self._last_progress_update + 0.01 > progress:
+            return
+
         try:
             update_job_progress = self.resolver(UpdateJobProgress)
             update_job_progress(self._current_job.id, progress)
@@ -84,7 +89,6 @@ class BotWorker(object):
                 self.log.info(f"Tried to set progress to {progress}, but the API says it's already higher")
             else:
                 raise e
-
 
     def _run(self):
         # Bind manually, otherwise JobAssigned won't be bound to this
