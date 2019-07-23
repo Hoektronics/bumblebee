@@ -88,6 +88,7 @@ class BotWorker(object):
             if e.code == Errors.jobPercentageCanOnlyIncrease:
                 self.log.info(f"Tried to set progress to {progress}, but the API says it's already higher")
             else:
+                self.log.error("Unknown exception from API", exc_info=True)
                 raise e
 
     def _run(self):
@@ -114,8 +115,11 @@ class BotWorker(object):
                 start_job_command(self._current_job.id)
 
                 self.log.info("Calling driver's run method")
-                self.driver.run(filename,
-                                update_job_progress=self._update_job_progress)
+                try:
+                    self.driver.run(filename,
+                                    update_job_progress=self._update_job_progress)
+                except Exception as ex:
+                    self.log.error("Unknown exception from driver run method", exc_info=True)
                 self.log.info("Driver's run method returned")
 
                 finish_job_command = self.resolver(FinishJob)

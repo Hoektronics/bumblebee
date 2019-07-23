@@ -8,6 +8,9 @@ from bumblebee.host import Host
 from bumblebee.host.framework.ioc import Resolver
 from bumblebee.host.must_be_host_guard import MustBeHostGuard
 
+import sentry_sdk
+sentry_sdk.init("https://ea5a7f74eda741ec8c84615d8b257736@sentry.io/1469260")
+
 def main():
     resolver = Resolver.get()
 

@@ -1,3 +1,4 @@
+import time
 from threading import Thread
 from unittest.mock import Mock
 
@@ -24,10 +25,14 @@ class TestHost(object):
         thread = Thread(target=host.run, daemon=True)
         thread.start()
 
+        # Super gross hack to make the test more "stable"
+        time.sleep(0.05)
+
+        assert fakes_events.fired(HostEvents.Startup).once()
+
         bots_manager.start.assert_called_once()
         available_connections_manager.start.assert_called_once()
 
-        assert fakes_events.fired(HostEvents.Startup).once()
         assert not fakes_events.fired(HostEvents.Shutdown)
 
         host.stop()
