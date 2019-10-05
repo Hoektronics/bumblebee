@@ -1,9 +1,11 @@
 import os
 import tempfile
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock, PropertyMock
 
 import pytest
+import requests
 from appdirs import AppDirs
+from requests import Response
 
 from bumblebee.host.framework.events import Event, EventManager
 from bumblebee.host.framework.ioc import Resolver
@@ -114,3 +116,31 @@ def fakes_events(resolver):
             return self._event_assertions[event]
 
     return FakesEvents()
+
+
+@pytest.fixture
+def mock_session(monkeypatch, dictionary_magic):
+    class FakeSession(object):
+        def __init__(self):
+            self.headers = {}
+            self.post = MagicMock()
+
+    monkeypatch.setattr(requests, "Session", lambda: FakeSession())
+
+
+@pytest.fixture
+def fake_responses():
+    class FakeResponses(object):
+        @staticmethod
+        def ok(return_value=None):
+            response = MagicMock(Response)
+            ok_mock = PropertyMock(return_value=True)
+            type(response).ok = ok_mock
+            if return_value is None:
+                response.json.return_value = {}
+            else:
+                response.json.return_value = return_value
+
+            return response
+
+    return FakeResponses()

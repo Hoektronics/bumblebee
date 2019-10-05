@@ -1,6 +1,4 @@
-from unittest.mock import MagicMock, patch, Mock, PropertyMock
-
-from requests import Response
+from unittest.mock import MagicMock
 
 from bumblebee.host.api.rest import RestApi
 from bumblebee.host.configurations import HostConfiguration
@@ -12,85 +10,62 @@ class TestRestApi(object):
         "Accept": "application/json"
     }
 
-    def test_default_headers_are_set(self, resolver, dictionary_magic):
+    def test_default_headers_are_set(self, resolver, dictionary_magic, mock_session, fake_responses):
         config = dictionary_magic(MagicMock(HostConfiguration))
         resolver.instance(config)
         config["server"] = "https://server/"
 
         api: RestApi = resolver(RestApi)
 
-        assert "Content-Type" in api._headers
-        assert api._headers["Content-Type"] == "application/json"
-        assert "Accept" in api._headers
-        assert api._headers["Accept"] == "application/json"
-        assert "Authorization" not in api._headers
+        assert "Content-Type" in api.session.headers
+        assert api.session.headers["Content-Type"] == "application/json"
+        assert "Accept" in api.session.headers
+        assert api.session.headers["Accept"] == "application/json"
+        assert "Authorization" not in api.session.headers
 
-        response = MagicMock(Response)
+        response = fake_responses.ok()
+        api.session.post.return_value = response
 
-        ok_mock = PropertyMock(return_value=True)
-        type(response).ok = ok_mock
-        response.json.return_value = {}
+        actual = api.post("/foo/bar")
 
-        with patch('bumblebee.host.api.rest.requests') as RequestsMock:
-            post: Mock = RequestsMock.post
-            post.return_value = response
+        api.session.post.assert_called_with("https://server/foo/bar", json={})
 
-            actual = api.post("/foo/bar")
+        assert actual is response
 
-            post.assert_called_with("https://server/foo/bar", json={}, headers=self.default_headers)
-
-            assert actual is response
-
-    def test_post_sends_headers(self, resolver, dictionary_magic):
+    def test_post_sends_headers(self, resolver, dictionary_magic, mock_session, fake_responses):
         config = dictionary_magic(MagicMock(HostConfiguration))
         resolver.instance(config)
         config["server"] = "https://server/"
 
         api: RestApi = resolver(RestApi)
 
-        api._headers["Authorization"] = "Bearer token"
+        config["access_token"] = "token"
+        assert "Authorization" not in api.session.headers
 
-        response = MagicMock(Response)
+        response = fake_responses.ok()
+        api.session.post.return_value = response
 
-        ok_mock = PropertyMock(return_value=True)
-        type(response).ok = ok_mock
-        response.json.return_value = {}
+        actual = api.post("/foo/bar")
 
-        with patch('bumblebee.host.api.rest.requests') as RequestsMock:
-            post: Mock = RequestsMock.post
-            post.return_value = response
+        api.session.post.assert_called_with("https://server/foo/bar", json={})
 
-            actual = api.post("/foo/bar")
+        assert actual is response
 
-            post.assert_called_with("https://server/foo/bar",
-                                    json={},
-                                    headers={"Authorization": "Bearer token", **self.default_headers}
-                                    )
+        assert "Authorization" in api.session.headers
+        assert api.session.headers["Authorization"] == "Bearer token"
 
-            assert actual is response
-
-    def test_post_sends_data(self, resolver, dictionary_magic):
+    def test_post_sends_data(self, resolver, dictionary_magic, mock_session, fake_responses):
         config = dictionary_magic(MagicMock(HostConfiguration))
         resolver.instance(config)
         config["server"] = "https://server/"
 
         api: RestApi = resolver(RestApi)
 
-        response = MagicMock(Response)
+        response = fake_responses.ok()
+        api.session.post.return_value = response
 
-        ok_mock = PropertyMock(return_value=True)
-        type(response).ok = ok_mock
-        response.json.return_value = {}
+        actual = api.post("/foo/bar", {"key": "value"})
 
-        with patch('bumblebee.host.api.rest.requests') as RequestsMock:
-            post: Mock = RequestsMock.post
-            post.return_value = response
+        api.session.post.assert_called_with("https://server/foo/bar", json={"key": "value"})
 
-            actual = api.post("/foo/bar", {"key": "value"})
-
-            post.assert_called_with("https://server/foo/bar",
-                                    json={"key": "value"},
-                                    headers=self.default_headers
-                                    )
-
-            assert actual is response
+        assert actual is response
