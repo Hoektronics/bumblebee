@@ -89,7 +89,8 @@ class BotWorker(object):
                 self.log.info(f"Tried to set progress to {progress}, but the API says it's already higher")
             else:
                 self.log.error("Unknown exception from API", exc_info=True)
-                raise e
+        except Exception as e:
+            self.log.error("Unknown other exception", exc_info=True)
 
     def _run(self):
         # Bind manually, otherwise JobAssigned won't be bound to this
