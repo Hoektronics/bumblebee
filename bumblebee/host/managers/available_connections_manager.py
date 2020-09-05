@@ -35,4 +35,4 @@ class AvailableConnectionsManager(object):
 
             self._last_known_connections = available_connections
         except Exception as ex:
-            self.host_logger.error("Some exception occurred", ecx_info=True)
+            self.host_logger.exception("Some exception occurred")
