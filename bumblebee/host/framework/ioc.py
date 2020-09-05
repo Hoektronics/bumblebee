@@ -20,7 +20,7 @@ class Resolver(object):
 
         self.instance(self)
 
-    def __call__(self, cls, **kwargs):
+    def __call__(self, cls, *args, **kwargs):
         # Implicit binding
         if cls not in self._bindings:
             if cls in self._annotated_singletons:
@@ -28,25 +28,31 @@ class Resolver(object):
             else:
                 self.bind(cls)
 
-        return self._bindings[cls](**kwargs)
+        return self._bindings[cls](*args, **kwargs)
 
-    def _make(self, cls, **kwargs):
+    def _make(self, cls, *args, **kwargs):
         args_spec = inspect.getfullargspec(cls.__init__)
+
+        args_dictionary = {}
+        for arg in args:
+            if hasattr(arg, '__class__'):
+                args_dictionary[arg.__class__] = arg
 
         if len(args_spec.args) > 1:
             var_args = []
 
-            for arg in args_spec.args[1:]:
-                if arg in kwargs:
-                    var_args.append(kwargs[arg])
-                elif arg in args_spec.annotations:
-                    argument_class = args_spec.annotations[arg]
-                    var_args.append(self.__call__(argument_class))
+            for arg_spec in args_spec.args[1:]:
+                if arg_spec in kwargs:
+                    var_args.append(kwargs[arg_spec])
+                elif arg_spec in args_spec.annotations:
+                    argument_class = args_spec.annotations[arg_spec]
+
+                    if argument_class in args_dictionary:
+                        var_args.append(args_dictionary[argument_class])
+                    else:
+                        var_args.append(self.__call__(argument_class, *args))
                 else:
-                    message = "Cannot bind argument {arg} for class {cls}".format(
-                        arg=arg,
-                        cls=cls
-                    )
+                    message = f"Cannot bind argument {arg_spec} for class {cls}"
                     raise FailureToBindException(message)
 
             return cls(*var_args)
@@ -68,8 +74,8 @@ class Resolver(object):
         if bind_function is not None:
             _internal = bind_function
         else:
-            def _internal(**kwargs):
-                return self._make(cls, **kwargs)
+            def _internal(*args, **kwargs):
+                return self._make(cls, *args, **kwargs)
 
         self._bindings[cls] = _internal
 
