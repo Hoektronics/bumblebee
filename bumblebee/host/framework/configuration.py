@@ -7,7 +7,36 @@ from appdirs import AppDirs
 from bumblebee.host.framework.ioc import Resolver
 
 
-class Configuration(object):
+class AutoSavingDictionary(object):
+    def __init__(self, base: 'AutoSavingDictionary', _dictionary):
+        self._base = base
+        self._dictionary = _dictionary
+
+    def __getitem__(self, item):
+        if isinstance(self._dictionary[item], dict):
+            return AutoSavingDictionary(self, self._dictionary[item])
+        else:
+            return self._dictionary[item]
+
+    def __setitem__(self, key, value):
+        if isinstance(value, AutoSavingDictionary):
+            self._dictionary[key] = value._dictionary
+        else:
+            self._dictionary[key] = value
+        self._base._save()
+
+    def __contains__(self, item):
+        return item in self._dictionary
+
+    def __delitem__(self, key):
+        del self._dictionary[key]
+        self._base._save()
+
+    def _save(self):
+        self._base._save()
+
+
+class Configuration(AutoSavingDictionary, object):
     def __init__(self, config_type):
         resolver = Resolver.get()
         app_dirs = resolver(AppDirs)
@@ -17,6 +46,8 @@ class Configuration(object):
         self._config_path = os.path.join(self._config_directory, config_file_name)
 
         self._config = self.__load_config()
+        super().__init__(self, self._config)
+
         self._lock = Lock()
         self._save()
 
@@ -26,23 +57,6 @@ class Configuration(object):
                 return json.load(config_handle)
 
         return self._default_config()
-
-    def __getitem__(self, item):
-        with self._lock:
-            return self._config[item]
-
-    def __setitem__(self, key, value):
-        with self._lock:
-            self._config[key] = value
-            self._save()
-
-    def __contains__(self, key):
-        return key in self._config
-
-    def __delitem__(self, key):
-        with self._lock:
-            del self._config[key]
-            self._save()
 
     @staticmethod
     def _default_config():
