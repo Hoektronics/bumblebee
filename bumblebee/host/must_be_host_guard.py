@@ -50,6 +50,7 @@ class MustBeHostGuard(object):
                     convert_to_host_request: ConvertRequestToHost = self._resolver(ConvertRequestToHost, server)
                     convert_to_host_request()
                     self._resolver.instance(server)
+                    self.config["server"] = server_url
 
                     return
 

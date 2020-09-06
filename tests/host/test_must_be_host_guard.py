@@ -42,8 +42,9 @@ class TestMustBeHostGuard(object):
         assert config["servers"][server_url]["access_token"] == "my_new_token"
 
         server = resolver(Server)
-        assert server is not None
         assert server.url == server_url
+        assert "server" in config
+        assert config["server"] == server.url
 
     def test_server_discovery_creates_host_request(self, resolver):
         _mocks = {}
@@ -121,3 +122,5 @@ class TestMustBeHostGuard(object):
 
         server = resolver(Server)
         assert server.url == foo_url
+        assert "server" in config
+        assert config["server"] == server.url
