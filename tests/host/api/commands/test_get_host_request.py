@@ -1,16 +1,16 @@
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 
 from bumblebee.host.api.botqueue_api import BotQueueApi
 from bumblebee.host.api.commands.get_host_request import GetHostRequest
-from bumblebee.host.configurations import HostConfiguration
+from bumblebee.host.api.server import Server
 
 
 class TestGetHostRequest(object):
-    def test_showing_host_request(self, resolver, dictionary_magic, fakes_events):
-        config = dictionary_magic(MagicMock(HostConfiguration))
-        resolver.instance(config)
+    def test_showing_host_request(self, resolver , fakes_events):
+        server = resolver(Server, url="https://server/")
+        resolver.instance(server)
 
-        config["host_request_id"] = "request_id"
+        server.request_id = "request_id"
 
         api = Mock(BotQueueApi)
         api.command.return_value = {
@@ -31,4 +31,4 @@ class TestGetHostRequest(object):
         assert request_data["id"] == "request_id"
         assert request_data["status"] == "request_status"
 
-        assert "host_request_id" in config
+        assert server.request_id is not None
