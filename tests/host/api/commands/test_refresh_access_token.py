@@ -2,15 +2,14 @@ from unittest.mock import MagicMock, Mock
 
 from bumblebee.host.api.botqueue_api import BotQueueApi
 from bumblebee.host.api.commands.refresh_access_token import RefreshAccessToken
-from bumblebee.host.configurations import HostConfiguration
+from bumblebee.host.api.server import Server
 
 
 class TestRefreshAccessToken(object):
-    def test_host_calls_refresh_endpoint_with_token(self, resolver, dictionary_magic):
-        config = dictionary_magic(MagicMock(HostConfiguration))
-        resolver.instance(config)
-
-        config["access_token"] = "fake_access_token"
+    def test_host_calls_refresh_endpoint_with_token(self, resolver):
+        server = resolver(Server, url="https://server/")
+        resolver.instance(server)
+        server.access_token = "fake_access_token"
 
         api = Mock(BotQueueApi)
         api.command.return_value = {
@@ -28,5 +27,4 @@ class TestRefreshAccessToken(object):
 
         api.command.assert_called_once_with("RefreshAccessToken")
 
-        assert "access_token" in config
-        assert config["access_token"] == "my_new_token"
+        assert server.access_token == "my_new_token"
