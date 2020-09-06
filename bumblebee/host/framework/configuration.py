@@ -12,10 +12,10 @@ from bumblebee.host.framework.ioc import Resolver
 class AutoSavingDictionary(dict):
     def __init__(self, base: AutoSavingDictionary, _dictionary):
         self._base = base
-        super().__init__(_dictionary)
+        super().__init__()
 
-    # def __getitem__(self, item):
-    #     return dict.__getitem__(self, item)
+        for key, value in _dictionary.items():
+            self.__setitem__(key, value)
 
     def __setitem__(self, key, value):
         if isinstance(value, dict) and not isinstance(value, AutoSavingDictionary):

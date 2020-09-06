@@ -64,3 +64,14 @@ class TestConfiguration(object):
         assert "sub2" in config
         assert "key" in config["sub2"]
         assert config["sub2"]["key"] == "value"
+
+    def test_loading_sub_dictionary_loads_as_autosave_dictionary(self, resolver):
+        config = Configuration("test")
+        config["sub"] = {"key": "value"}
+
+        config = Configuration("test")  # Reload
+        config["sub"]["key2"] = "value2"
+
+        config = Configuration("test")  # Reload again
+        assert "key2" in config["sub"]
+        assert config["sub"]["key2"] == "value2"
