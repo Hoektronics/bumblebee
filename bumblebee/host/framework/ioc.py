@@ -65,7 +65,8 @@ class Resolver(object):
                 instance = cls
                 cls = instance.__class__
 
-        def _internal():
+        # Pretend we take arguments even though we always return the same instance
+        def _internal(*_, **__):
             return instance
 
         self._bindings[cls] = _internal

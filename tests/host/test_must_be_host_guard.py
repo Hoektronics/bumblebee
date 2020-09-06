@@ -81,12 +81,12 @@ class TestMustBeHostGuard(object):
         _get_host_request_mocks = {}
 
         def _get_host_request_bind(*args):
-            server = args[0]
-            if server.url not in _get_host_request_mocks:
+            binding_server = args[0]
+            if binding_server.url not in _get_host_request_mocks:
                 get_host_request = MagicMock(GetHostRequest)
-                _get_host_request_mocks[server.url] = get_host_request
+                _get_host_request_mocks[binding_server.url] = get_host_request
 
-                if server.url == foo_url:
+                if binding_server.url == foo_url:
                     get_host_request.side_effect = [
                         {"status": "requested"},
                         {"status": "claimed"}
@@ -94,17 +94,17 @@ class TestMustBeHostGuard(object):
                 else:
                     get_host_request.return_value = {"status": "requested"}
 
-            return _get_host_request_mocks[server.url]
+            return _get_host_request_mocks[binding_server.url]
 
         resolver.bind(GetHostRequest, _get_host_request_bind)
 
         _convert_request_to_host_mocks = {}
 
         def _convert_request_to_host_bind(*args):
-            server = args[0]
-            if server.url not in _convert_request_to_host_mocks:
-                _convert_request_to_host_mocks[server.url] = MagicMock(ConvertRequestToHost)
-            return _convert_request_to_host_mocks[server.url]
+            binding_server = args[0]
+            if binding_server.url not in _convert_request_to_host_mocks:
+                _convert_request_to_host_mocks[binding_server.url] = MagicMock(ConvertRequestToHost)
+            return _convert_request_to_host_mocks[binding_server.url]
 
         resolver.bind(ConvertRequestToHost, _convert_request_to_host_bind)
 

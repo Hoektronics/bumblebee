@@ -118,6 +118,15 @@ class TestIocResolver(object):
         with pytest.raises(FailureToBindException):
             resolver(TwoLevelsAboveUnannotatedFakeClass, foo=5)
 
+    def test_can_pass_parameters_to_instance_resolution(self, resolver):
+        first_fake_class = NoArgumentFakeClass()
+        resolver.instance(OneArgumentFakeClass(first_fake_class))
+
+        instance = resolver(OneArgumentFakeClass, NoArgumentFakeClass(), foo=5)
+
+        assert isinstance(instance, OneArgumentFakeClass)
+        assert instance.foo is first_fake_class
+
     def test_can_resolve_singleton_function(self, resolver):
         def resolve_instance():
             return NoArgumentFakeClass()
