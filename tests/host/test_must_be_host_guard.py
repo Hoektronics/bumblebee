@@ -77,6 +77,35 @@ class TestMustBeHostGuard(object):
         server_discovery_manager.start.assert_not_called()
         server_discovery_manager.stop.assert_not_called()
 
+    def test_server_discovery_creates_host_request_when_needed(self, resolver):
+        server_discovery_manager = MagicMock(ServerDiscoveryManager)
+        resolver.instance(ServerDiscoveryManager, server_discovery_manager)
+
+        _mocks = {}
+        foo_url = "http://foo.test"
+        bar_url = "http://bar.test"
+        resolver(Server, url=bar_url).request_id = "deadbeef"
+
+        def _creat_host_request_bind(*args):
+            server = args[0]
+            if server.url not in _mocks:
+                _mocks[server.url] = MagicMock(CreateHostRequest)
+            return _mocks[server.url]
+
+        resolver.bind(CreateHostRequest, _creat_host_request_bind)
+
+        # Bind events
+        resolver(MustBeHostGuard)
+
+        ServerDiscovery.ServerDiscovered(foo_url).fire()
+        ServerDiscovery.ServerDiscovered(bar_url).fire()
+
+        assert foo_url in _mocks
+        assert bar_url not in _mocks
+
+        server_discovery_manager.start.assert_not_called()
+        server_discovery_manager.stop.assert_not_called()
+
     def test_guard_checks_all_known_host_requests(self, resolver):
         config = resolver(HostConfiguration)
         server_discovery_manager = MagicMock(ServerDiscoveryManager)
@@ -144,3 +173,67 @@ class TestMustBeHostGuard(object):
 
         server_discovery_manager.start.assert_called_once()
         server_discovery_manager.stop.assert_called_once()
+
+    def test_guard_reissues_expired_host_requests(self, resolver):
+        config = resolver(HostConfiguration)
+        server_discovery_manager = MagicMock(ServerDiscoveryManager)
+        resolver.instance(ServerDiscoveryManager, server_discovery_manager)
+
+        url = "http://foo.test"
+        server = resolver(Server, url=url)
+        server.request_id = "abcdabcd"
+
+        get_host_request_mock = MagicMock(GetHostRequest)
+
+        called_for_first_id = False
+        called_for_second_id = False
+
+        def _get_host_request_side_effect():
+            nonlocal called_for_first_id
+            nonlocal called_for_second_id
+            if server.request_id == "abcdabcd":
+                called_for_first_id = True
+                return {"status": "expired"}
+            elif server.request_id == "deadbeef":
+                called_for_second_id = True
+                return {"status": "claimed"}
+            else:
+                raise ValueError("Unexpected request id")
+
+        get_host_request_mock.side_effect = _get_host_request_side_effect
+        resolver.instance(GetHostRequest, get_host_request_mock)
+
+        convert_request_mock = MagicMock(ConvertRequestToHost)
+
+        def _convert_request_side_effect():
+            del server.request_id
+
+        convert_request_mock.side_effect = _convert_request_side_effect
+        resolver.instance(ConvertRequestToHost, convert_request_mock)
+
+        create_host_request_mock = MagicMock(CreateHostRequest)
+
+        def _create_host_request_side_effect():
+            server.request_id = "deadbeef"
+
+        create_host_request_mock.side_effect = _create_host_request_side_effect
+        resolver.instance(CreateHostRequest, create_host_request_mock)
+
+        guard: MustBeHostGuard = resolver(MustBeHostGuard)
+        guard._loop_wait = 0
+
+        guard()
+
+        server_discovery_manager.start.assert_called_once()
+        server_discovery_manager.stop.assert_called_once()
+
+        assert get_host_request_mock.call_count == 2
+        convert_request_mock.assert_called_once()
+        create_host_request_mock.assert_called_once()
+
+        assert called_for_first_id
+        assert called_for_second_id
+
+        server = resolver(Server)
+        assert server.url == url
+        assert server.request_id is None

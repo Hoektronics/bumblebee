@@ -57,12 +57,22 @@ class MustBeHostGuard(object):
                     self._server_discovery_manager.stop()
 
                     return
+                elif response["status"] == "expired":
+                    # Try again with a new request id
+                    del server.request_id
+
+                    create_host_request: CreateHostRequest = self._resolver(CreateHostRequest, server)
+
+                    create_host_request()
 
             time.sleep(self._loop_wait)
 
     @on(ServerDiscovery.ServerDiscovered)
     def _server_discovered(self, event: ServerDiscovery.ServerDiscovered):
         server = self._resolver(Server, url=event.url)
+
+        if server.request_id is not None:
+            return
 
         create_host_request: CreateHostRequest = self._resolver(CreateHostRequest, server)
 
