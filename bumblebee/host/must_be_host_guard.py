@@ -35,14 +35,16 @@ class MustBeHostGuard(object):
 
             return
 
-        # self._server_discovery_manager.start()
-
-        # while True:
-        #     time.sleep(10)
+        self._server_discovery_manager.start()
 
         while True:
             for server_url in self.config["servers"].keys():
                 server = self._resolver(Server, url=server_url)
+
+                # If we don't have a request id, there's nothing to look up
+                if server.request_id is None:
+                    continue
+
                 get_host_request: GetHostRequest = self._resolver(GetHostRequest, server)
                 response = get_host_request()
 
@@ -51,6 +53,8 @@ class MustBeHostGuard(object):
                     convert_to_host_request()
                     self._resolver.instance(server)
                     self.config["server"] = server_url
+
+                    self._server_discovery_manager.stop()
 
                     return
 

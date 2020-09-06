@@ -7,14 +7,15 @@ from bumblebee.host.api.commands.get_host_request import GetHostRequest
 from bumblebee.host.api.server import Server
 from bumblebee.host.configurations import HostConfiguration
 from bumblebee.host.events import ServerDiscovery
+from bumblebee.host.managers.server_discovery_manager import ServerDiscoveryManager
 from bumblebee.host.must_be_host_guard import MustBeHostGuard
 
 
 class TestMustBeHostGuard(object):
     def test_host_refresh_is_called_if_access_token_exists(self, resolver):
-        # config = dictionary_magic(MagicMock(HostConfiguration))
-        # resolver.instance(config)
         config = resolver(HostConfiguration)
+        server_discovery_manager = MagicMock(ServerDiscoveryManager)
+        resolver.instance(ServerDiscoveryManager, server_discovery_manager)
 
         server_url = "https://example.test"
         config["server"] = server_url
@@ -46,7 +47,13 @@ class TestMustBeHostGuard(object):
         assert "server" in config
         assert config["server"] == server.url
 
+        server_discovery_manager.start.assert_not_called()
+        server_discovery_manager.stop.assert_not_called()
+
     def test_server_discovery_creates_host_request(self, resolver):
+        server_discovery_manager = MagicMock(ServerDiscoveryManager)
+        resolver.instance(ServerDiscoveryManager, server_discovery_manager)
+
         _mocks = {}
         foo_url = "http://foo.test"
         bar_url = "http://bar.test"
@@ -67,15 +74,22 @@ class TestMustBeHostGuard(object):
         assert foo_url in _mocks
         assert bar_url not in _mocks
 
+        server_discovery_manager.start.assert_not_called()
+        server_discovery_manager.stop.assert_not_called()
+
     def test_guard_checks_all_known_host_requests(self, resolver):
         config = resolver(HostConfiguration)
+        server_discovery_manager = MagicMock(ServerDiscoveryManager)
+        resolver.instance(ServerDiscoveryManager, server_discovery_manager)
 
         foo_url = "http://foo.test"
         bar_url = "http://bar.test"
+        baz_url = "http://baz.test"
 
         config["servers"] = {
             foo_url: {"request_id": "abcdabcd"},
             bar_url: {"request_id": "deadbeef"},
+            baz_url: {},
         }
 
         _get_host_request_mocks = {}
@@ -120,7 +134,13 @@ class TestMustBeHostGuard(object):
         assert _get_host_request_mocks[bar_url].call_count == 1
         assert bar_url not in _convert_request_to_host_mocks
 
+        assert baz_url not in _get_host_request_mocks
+        assert baz_url not in _convert_request_to_host_mocks
+
         server = resolver(Server)
         assert server.url == foo_url
         assert "server" in config
         assert config["server"] == server.url
+
+        server_discovery_manager.start.assert_called_once()
+        server_discovery_manager.stop.assert_called_once()
