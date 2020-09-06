@@ -4,38 +4,61 @@ from bumblebee.host.api.commands.convert_request_to_host import ConvertRequestTo
 from bumblebee.host.api.commands.refresh_access_token import RefreshAccessToken
 from bumblebee.host.api.commands.create_host_request import CreateHostRequest
 from bumblebee.host.api.commands.get_host_request import GetHostRequest
+from bumblebee.host.api.server import Server
 from bumblebee.host.configurations import HostConfiguration
+from bumblebee.host.events import ServerDiscovery
 from bumblebee.host.framework.ioc import Resolver
+from bumblebee.host.framework.events import on, bind_events
+from bumblebee.host.managers.server_discovery_manager import ServerDiscoveryManager
 
 
+@bind_events
 class MustBeHostGuard(object):
     def __init__(self,
-                 config: HostConfiguration):
+                 resolver: Resolver,
+                 config: HostConfiguration,
+                 server_discovery_manager: ServerDiscoveryManager):
+        self._resolver = resolver
         self.config = config
         self._loop_wait = 10
+        self._server_discovery_manager = server_discovery_manager
 
     def __call__(self):
-        resolver = Resolver.get()
+        if "server" in self.config:
+            server_url = self.config["server"]
+            server = self._resolver(Server, url=server_url)
+            self._resolver.instance(server)
 
-        if "access_token" in self.config:
-            host_refresh: RefreshAccessToken = resolver(RefreshAccessToken)
+            host_refresh: RefreshAccessToken = self._resolver(RefreshAccessToken)
 
             host_refresh()
 
             return
 
-        make_host_request: CreateHostRequest = resolver(CreateHostRequest)
+        # self._server_discovery_manager.start()
 
-        make_host_request()
+        # while True:
+        #     time.sleep(10)
 
-        show_host_request: GetHostRequest = resolver(GetHostRequest)
         while True:
-            response = show_host_request()
+            for server_url in self.config["servers"].keys():
+                server = self._resolver(Server, url=server_url)
+                get_host_request: GetHostRequest = self._resolver(GetHostRequest, server)
+                response = get_host_request()
 
-            if response["status"] == "claimed":
-                host_access: ConvertRequestToHost = resolver(ConvertRequestToHost)
+                if response["status"] == "claimed":
+                    convert_to_host_request: ConvertRequestToHost = self._resolver(ConvertRequestToHost, server)
+                    convert_to_host_request()
+                    self._resolver.instance(server)
 
-                host_access()
-                return
+                    return
 
             time.sleep(self._loop_wait)
+
+    @on(ServerDiscovery.ServerDiscovered)
+    def _server_discovered(self, event: ServerDiscovery.ServerDiscovered):
+        server = self._resolver(Server, url=event.url)
+
+        create_host_request: CreateHostRequest = self._resolver(CreateHostRequest, server)
+
+        create_host_request()
