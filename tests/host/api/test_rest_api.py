@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 
 from bumblebee.host.api.rest import RestApi
+from bumblebee.host.api.server import Server
 from bumblebee.host.configurations import HostConfiguration
 
 
@@ -10,10 +11,8 @@ class TestRestApi(object):
         "Accept": "application/json"
     }
 
-    def test_default_headers_are_set(self, resolver, dictionary_magic, mock_session, fake_responses):
-        config = dictionary_magic(MagicMock(HostConfiguration))
-        resolver.instance(config)
-        config["server"] = "https://server/"
+    def test_default_headers_are_set(self, resolver, mock_session, fake_responses):
+        resolver.instance(resolver(Server, url="https://server/"))
 
         api: RestApi = resolver(RestApi)
 
@@ -32,14 +31,13 @@ class TestRestApi(object):
 
         assert actual is response
 
-    def test_post_sends_headers(self, resolver, dictionary_magic, mock_session, fake_responses):
-        config = dictionary_magic(MagicMock(HostConfiguration))
-        resolver.instance(config)
-        config["server"] = "https://server/"
+    def test_post_sends_headers(self, resolver, mock_session, fake_responses):
+        server = resolver(Server, url="https://server/")
+        resolver.instance(server)
 
         api: RestApi = resolver(RestApi)
 
-        config["access_token"] = "token"
+        server.access_token = "token"
         assert "Authorization" not in api.session.headers
 
         response = fake_responses.ok()
@@ -54,10 +52,9 @@ class TestRestApi(object):
         assert "Authorization" in api.session.headers
         assert api.session.headers["Authorization"] == "Bearer token"
 
-    def test_post_sends_data(self, resolver, dictionary_magic, mock_session, fake_responses):
-        config = dictionary_magic(MagicMock(HostConfiguration))
-        resolver.instance(config)
-        config["server"] = "https://server/"
+    def test_post_sends_data(self, resolver, mock_session, fake_responses):
+        server = resolver(Server, url="https://server/")
+        resolver.instance(server)
 
         api: RestApi = resolver(RestApi)
 

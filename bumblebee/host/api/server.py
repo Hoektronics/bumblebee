@@ -18,6 +18,8 @@ class Server(object):
 
     @property
     def access_token(self):
+        if "access_token" not in self._server_config:
+            return None
         return self._server_config["access_token"]
 
     @access_token.setter
