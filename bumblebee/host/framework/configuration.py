@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import os
 from threading import Lock
@@ -7,30 +9,24 @@ from appdirs import AppDirs
 from bumblebee.host.framework.ioc import Resolver
 
 
-class AutoSavingDictionary(object):
-    def __init__(self, base: 'AutoSavingDictionary', _dictionary):
+class AutoSavingDictionary(dict):
+    def __init__(self, base: AutoSavingDictionary, _dictionary):
         self._base = base
-        self._dictionary = _dictionary
+        super().__init__(_dictionary)
 
-    def __getitem__(self, item):
-        if isinstance(self._dictionary[item], dict):
-            return AutoSavingDictionary(self, self._dictionary[item])
-        else:
-            return self._dictionary[item]
+    # def __getitem__(self, item):
+    #     return dict.__getitem__(self, item)
 
     def __setitem__(self, key, value):
-        if isinstance(value, AutoSavingDictionary):
-            self._dictionary[key] = value._dictionary
+        if isinstance(value, dict) and not isinstance(value, AutoSavingDictionary):
+            dict.__setitem__(self, key, AutoSavingDictionary(self, value))
         else:
-            self._dictionary[key] = value
-        self._base._save()
-
-    def __contains__(self, item):
-        return item in self._dictionary
+            dict.__setitem__(self, key, value)
+        self._save()
 
     def __delitem__(self, key):
-        del self._dictionary[key]
-        self._base._save()
+        dict.__delitem__(self, key)
+        self._save()
 
     def _save(self):
         self._base._save()
@@ -45,8 +41,7 @@ class Configuration(AutoSavingDictionary, object):
         self._config_directory = app_dirs.user_config_dir
         self._config_path = os.path.join(self._config_directory, config_file_name)
 
-        self._config = self.__load_config()
-        super().__init__(self, self._config)
+        super().__init__(self, self.__load_config())
 
         self._lock = Lock()
         self._save()
@@ -66,4 +61,4 @@ class Configuration(AutoSavingDictionary, object):
         os.makedirs(self._config_directory, exist_ok=True)
 
         with open(self._config_path, 'w') as config_handle:
-            json.dump(self._config, config_handle)
+            json.dump(self, config_handle)
