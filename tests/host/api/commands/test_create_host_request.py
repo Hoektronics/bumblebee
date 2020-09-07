@@ -32,3 +32,5 @@ class TestCreateHostRequest(object):
         event: AuthFlowEvents.HostRequestMade = fakes_events.fired(AuthFlowEvents.HostRequestMade).event
         assert event.host_request.id == 1
         assert event.host_request.status == "requested"
+        assert event.host_request.server == server.url
+        assert event.host_request.url == f"{server.url}/hosts/requests/1"

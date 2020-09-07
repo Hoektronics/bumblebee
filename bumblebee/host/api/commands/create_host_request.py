@@ -16,7 +16,8 @@ class CreateHostRequest(object):
         
         host_request = HostRequest(
             id=response["id"],
-            status=response["status"]
+            status=response["status"],
+            server=self._server.url
         )
 
         self._server.request_id = host_request.id
