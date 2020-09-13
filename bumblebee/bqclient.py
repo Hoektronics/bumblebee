@@ -24,6 +24,7 @@ class BQClient(object):
 
     @on(HostEvents.Startup)
     def _start(self):
+        print("Host startup!")
         self.log.info("Host startup!")
 
     @on(HostEvents.Shutdown)

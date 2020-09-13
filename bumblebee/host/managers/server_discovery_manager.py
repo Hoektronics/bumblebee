@@ -18,6 +18,9 @@ class ServerDiscoveryManager(zeroconf.ServiceListener, object):
     def add_service(self, zc: zeroconf.Zeroconf, type_: str, name: str) -> None:
         info = zc.get_service_info(type_, name)
 
+        if info is None:
+            return
+
         if self._is_botqueue_server(info):
             url = self._get_url(info)
             print(f"Added server {url}")

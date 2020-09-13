@@ -50,6 +50,109 @@ class TestMustBeHostGuard(object):
         server_discovery_manager.start.assert_not_called()
         server_discovery_manager.stop.assert_not_called()
 
+    def test_create_request_is_called_on_server_if_access_token_does_not_exist(self, resolver):
+        config = resolver(HostConfiguration)
+        server_discovery_manager = MagicMock(ServerDiscoveryManager)
+        resolver.instance(ServerDiscoveryManager, server_discovery_manager)
+
+        server_url = "https://example.test"
+        config["server"] = server_url
+        server = resolver(Server, url=server_url)
+
+        create_host_request = MagicMock(CreateHostRequest)
+        resolver.instance(CreateHostRequest, create_host_request)
+
+        def create_request():
+            server.request_id = "my_request"
+
+        create_host_request.side_effect = create_request
+
+        get_host_request = MagicMock(GetHostRequest)
+        resolver.instance(GetHostRequest, get_host_request)
+        get_host_request.return_value = {"status": "claimed"}
+
+        convert_request_to_host = MagicMock(ConvertRequestToHost)
+        resolver.instance(ConvertRequestToHost, convert_request_to_host)
+
+        def convert_request():
+            server.access_token = "my_access_token"
+
+        convert_request_to_host.side_effect = convert_request
+
+        guard: MustBeHostGuard = resolver(MustBeHostGuard)
+
+        guard()
+
+        create_host_request.assert_called_once()
+        get_host_request.assert_called_once()
+        convert_request_to_host.assert_called_once()
+        assert "request_id" in config["servers"][server_url]
+        assert config["servers"][server_url]["request_id"] == "my_request"
+        assert "access_token" in config["servers"][server_url]
+        assert config["servers"][server_url]["access_token"] == "my_access_token"
+
+        server = resolver(Server)
+        assert server.url == server_url
+        assert "server" in config
+        assert config["server"] == server.url
+
+        server_discovery_manager.start.assert_not_called()
+        server_discovery_manager.stop.assert_called_once()
+
+    def test_create_request_is_not_called_on_server_if_it_already_exists(self, resolver):
+        config = resolver(HostConfiguration)
+        server_discovery_manager = MagicMock(ServerDiscoveryManager)
+        resolver.instance(ServerDiscoveryManager, server_discovery_manager)
+
+        server_url = "https://example.test"
+        config["server"] = server_url
+        config["servers"] = {
+            server_url: {
+                "request_id": "my_request"
+            }
+        }
+        server = resolver(Server, url=server_url)
+
+        create_host_request = MagicMock(CreateHostRequest)
+        resolver.instance(CreateHostRequest, create_host_request)
+
+        def create_request():
+            server.request_id = "not_my_request"
+
+        create_host_request.side_effect = create_request
+
+        get_host_request = MagicMock(GetHostRequest)
+        resolver.instance(GetHostRequest, get_host_request)
+        get_host_request.return_value = {"status": "claimed"}
+
+        convert_request_to_host = MagicMock(ConvertRequestToHost)
+        resolver.instance(ConvertRequestToHost, convert_request_to_host)
+
+        def convert_request():
+            server.access_token = "my_access_token"
+
+        convert_request_to_host.side_effect = convert_request
+
+        guard: MustBeHostGuard = resolver(MustBeHostGuard)
+
+        guard()
+
+        create_host_request.assert_not_called()
+        get_host_request.assert_called_once()
+        convert_request_to_host.assert_called_once()
+        assert "request_id" in config["servers"][server_url]
+        assert config["servers"][server_url]["request_id"] == "my_request"
+        assert "access_token" in config["servers"][server_url]
+        assert config["servers"][server_url]["access_token"] == "my_access_token"
+
+        server = resolver(Server)
+        assert server.url == server_url
+        assert "server" in config
+        assert config["server"] == server.url
+
+        server_discovery_manager.start.assert_not_called()
+        server_discovery_manager.stop.assert_called_once()
+
     def test_server_discovery_creates_host_request(self, resolver):
         server_discovery_manager = MagicMock(ServerDiscoveryManager)
         resolver.instance(ServerDiscoveryManager, server_discovery_manager)

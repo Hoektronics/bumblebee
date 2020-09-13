@@ -27,15 +27,22 @@ class MustBeHostGuard(object):
         if "server" in self.config:
             server_url = self.config["server"]
             server = self._resolver(Server, url=server_url)
-            self._resolver.instance(server)
 
-            host_refresh: RefreshAccessToken = self._resolver(RefreshAccessToken)
+            if server.access_token is None:
+                if server.request_id is None:
+                    create_host_request: CreateHostRequest = self._resolver(CreateHostRequest, server)
 
-            host_refresh()
+                    create_host_request()
+            else:
+                self._resolver.instance(server)
 
-            return
+                host_refresh: RefreshAccessToken = self._resolver(RefreshAccessToken)
 
-        self._server_discovery_manager.start()
+                host_refresh()
+
+                return
+        else:
+            self._server_discovery_manager.start()
 
         while True:
             for server_url in self.config["servers"].keys():
