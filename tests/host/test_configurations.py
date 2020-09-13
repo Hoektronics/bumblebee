@@ -5,4 +5,4 @@ class TestHostConfiguration(object):
     def test_default_parameters_exist(self, resolver):
         config = resolver(HostConfiguration)
 
-        assert "server" in config
+        assert "servers" in config

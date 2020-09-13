@@ -10,5 +10,5 @@ class HostConfiguration(Configuration):
     @staticmethod
     def _default_config():
         return {
-            'server': 'https://botqueue.com/'
+            'servers': {}
         }

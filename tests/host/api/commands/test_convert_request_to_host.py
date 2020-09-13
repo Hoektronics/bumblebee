@@ -1,19 +1,19 @@
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 
 from bumblebee.host.api.botqueue_api import BotQueueApi
 from bumblebee.host.api.commands.convert_request_to_host import ConvertRequestToHost
-from bumblebee.host.configurations import HostConfiguration
+from bumblebee.host.api.server import Server
 from bumblebee.host.events import AuthFlowEvents
 
 
 class TestConvertRequestToHost(object):
-    def test_accepting_host_request(self, resolver, dictionary_magic, fakes_events):
+    def test_accepting_host_request(self, resolver, fakes_events):
         fakes_events.fake(AuthFlowEvents.HostMade)
 
-        config = dictionary_magic(MagicMock(HostConfiguration))
-        resolver.instance(config)
+        server = resolver(Server, url="https://server/")
+        resolver.instance(server)
 
-        config["host_request_id"] = "request_id"
+        server.request_id = "request_id"
 
         api = Mock(BotQueueApi)
         api.command.return_value = {
@@ -33,12 +33,11 @@ class TestConvertRequestToHost(object):
             "id": "request_id"
         })
 
-        assert "access_token" in config
-        assert config["access_token"] == "my_token"
-        assert config["id"] == 1
-        assert config["name"] == "Test Host"
+        assert server.access_token == "my_token"
+        assert server.host_id == 1
+        assert server.host_name == "Test Host"
 
-        assert "host_request_id" not in config
+        assert server.request_id is None
 
         assert fakes_events.fired(AuthFlowEvents.HostMade).once()
 

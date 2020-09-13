@@ -19,17 +19,12 @@ class BQClient(object):
 
     @on(AuthFlowEvents.HostRequestMade)
     def _host_request_made(self, event: AuthFlowEvents.HostRequestMade):
-        request_id = event.host_request.id
-
-        host_config: HostConfiguration = self.resolver(HostConfiguration)
-        server = host_config["server"]
-
-        url = f"{server}/hosts/requests/{request_id}"
         print("Please go here in a web browser to claim this host!")
-        print(url)
+        print(event.host_request.url)
 
     @on(HostEvents.Startup)
     def _start(self):
+        print("Host startup!")
         self.log.info("Host startup!")
 
     @on(HostEvents.Shutdown)

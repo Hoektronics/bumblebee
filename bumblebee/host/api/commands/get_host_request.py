@@ -1,17 +1,15 @@
 from bumblebee.host.api.botqueue_api import BotQueueApi
-from bumblebee.host.configurations import HostConfiguration
+from bumblebee.host.api.server import Server
 
 
 class GetHostRequest(object):
     def __init__(self,
-                 config: HostConfiguration,
+                 server: Server,
                  api: BotQueueApi):
-        self.config = config
+        self._server = server
         self.api = api
 
     def __call__(self):
-        request_id = self.config["host_request_id"]
-
         return self.api.command("GetHostRequest", {
-            "id": request_id
+            "id": self._server.request_id
         })

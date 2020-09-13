@@ -39,7 +39,8 @@ setup(name="bqclient",
           'deepdiff',
           'requests',
           'pyserial',
-          'sentry-sdk==0.10.2'
+          'sentry-sdk==0.10.2',
+          'zeroconf'
       ],
       tests_require=[
           "pytest",

@@ -17,6 +17,16 @@ class UnannotatedFakeClass(object):
         self.foo = foo
 
 
+class UsesUnannotatedFakeClass(object):
+    def __init__(self, fake: UnannotatedFakeClass):
+        self.fake = fake
+
+
+class TwoLevelsAboveUnannotatedFakeClass(object):
+    def __init__(self, uses_fake: UsesUnannotatedFakeClass):
+        self.uses_fake = uses_fake
+
+
 class ClassWithResolver(object):
     def __init__(self, resolver: Resolver):
         self.resolver = resolver
@@ -78,6 +88,44 @@ class TestIocResolver(object):
 
         assert instance is not None
         assert instance.foo is fake_class
+
+    def test_can_specify_unresolvable_classes(self, resolver):
+        fake_class = resolver(UnannotatedFakeClass, foo=5)
+        instance = resolver(UsesUnannotatedFakeClass, fake_class)
+
+        assert instance is not None
+        assert instance.fake is fake_class
+
+    def test_can_specify_resolvable_classes(self, resolver):
+        fake_class = resolver(NoArgumentFakeClass)
+        instance = resolver(OneArgumentFakeClass, fake_class)
+
+        assert instance is not None
+        assert instance.foo is fake_class
+
+    def test_can_specify_unresolvable_classes_more_than_one_level_up(self, resolver):
+        fake_class = resolver(UnannotatedFakeClass, foo=5)
+        instance = resolver(TwoLevelsAboveUnannotatedFakeClass, fake_class)
+
+        assert instance is not None
+        assert instance.uses_fake is not None
+        assert instance.uses_fake.fake is fake_class
+
+    def test_cannot_specify_unannotated_parameters_multiple_levels_down(self, resolver):
+        with pytest.raises(FailureToBindException):
+            resolver(UsesUnannotatedFakeClass, foo=5)
+
+        with pytest.raises(FailureToBindException):
+            resolver(TwoLevelsAboveUnannotatedFakeClass, foo=5)
+
+    def test_can_pass_parameters_to_instance_resolution(self, resolver):
+        first_fake_class = NoArgumentFakeClass()
+        resolver.instance(OneArgumentFakeClass(first_fake_class))
+
+        instance = resolver(OneArgumentFakeClass, NoArgumentFakeClass(), foo=5)
+
+        assert isinstance(instance, OneArgumentFakeClass)
+        assert instance.foo is first_fake_class
 
     def test_can_resolve_singleton_function(self, resolver):
         def resolve_instance():
