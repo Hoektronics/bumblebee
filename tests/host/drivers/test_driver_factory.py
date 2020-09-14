@@ -2,7 +2,7 @@ import pytest
 
 from bumblebee.host.drivers.driver_factory import DriverFactory, InvalidDriver
 from bumblebee.host.drivers.dummy import DummyDriver
-from bumblebee.host.drivers.printrun import PrintrunDriver
+from bumblebee.host.drivers.printrun_driver import PrintrunDriver
 
 
 class TestDriverFactory(object):

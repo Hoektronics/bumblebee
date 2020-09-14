@@ -1,5 +1,5 @@
 from bumblebee.host.drivers.dummy import DummyDriver
-from bumblebee.host.drivers.printrun import PrintrunDriver
+from bumblebee.host.drivers.printrun_driver import PrintrunDriver
 from bumblebee.host.framework.ioc import Resolver
 
 

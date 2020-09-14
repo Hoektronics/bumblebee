@@ -1,7 +1,7 @@
 import time
 
-from printrun.printcore import printcore
-from printrun import gcoder
+from bumblebee.host.drivers.printrun.printcore import printcore
+from bumblebee.host.drivers.printrun.gcoder import LightGCode
 
 
 class PrintrunDriver(object):
@@ -33,7 +33,7 @@ class PrintrunDriver(object):
         with open(filename, 'rb') as fh:
             gcode = [i.strip().decode("utf-8") for i in fh.readlines()]
 
-        gcode = gcoder.LightGCode(gcode)
+        gcode = LightGCode(gcode)
 
         self.printcore.startprint(gcode)
 

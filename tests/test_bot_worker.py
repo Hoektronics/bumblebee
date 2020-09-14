@@ -8,7 +8,7 @@ from bumblebee.host.api.commands.start_job import StartJob
 from bumblebee.host.downloader import Downloader
 from bumblebee.host.drivers.driver_factory import DriverFactory
 from bumblebee.host.drivers.dummy import DummyDriver
-from bumblebee.host.drivers.printrun import PrintrunDriver
+from bumblebee.host.drivers.printrun_driver import PrintrunDriver
 from bumblebee.host.events import JobEvents, BotEvents
 from bumblebee.host.types import Bot, Job
 
