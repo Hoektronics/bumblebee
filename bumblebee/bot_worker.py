@@ -72,6 +72,10 @@ class BotWorker(object):
 
     @on(BotEvents.BotUpdated)
     def _bot_updated(self, event: BotEvents.BotUpdated):
+        if self.bot.status != 'idle' and event.bot.status == 'idle':
+            get_a_job = self.resolver(GetAJob)
+            get_a_job(self.bot.id)
+
         self.bot = event.bot
         self._handle_driver()
         self._handle_job_available()

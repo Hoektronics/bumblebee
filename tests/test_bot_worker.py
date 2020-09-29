@@ -181,7 +181,7 @@ class TestBotWorker(object):
             name="Test Bot",
             status="idle",
             type="3d_printer",
-            job_available=True
+            job_available=False
         )
 
         worker: BotWorker = resolver(BotWorker, bot=bot)
@@ -428,3 +428,29 @@ class TestBotWorker(object):
             call.fast.connect(),
             call.fast.disconnect(),
         ])
+
+    def test_bot_updated_to_idle_calls_get_a_job(self, resolver):
+        get_a_job = MagicMock(GetAJob)
+        resolver.instance(get_a_job)
+
+        old_bot = Bot(
+            id=1,
+            name="Test Bot",
+            status="waiting",
+            type="3d_printer"
+        )
+
+        worker: BotWorker = resolver(BotWorker, bot=old_bot)
+
+        new_bot = Bot(
+            id=old_bot.id,
+            name=old_bot.name,
+            status="idle",
+            type=old_bot.type,
+        )
+
+        BotEvents.BotUpdated(new_bot).fire()
+
+        worker.stop()
+
+        get_a_job.assert_called_once_with(new_bot.id)
