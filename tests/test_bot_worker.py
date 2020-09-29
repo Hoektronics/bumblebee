@@ -5,6 +5,7 @@ import pytest
 
 from bumblebee.bot_worker import BotWorker
 from bumblebee.host.api.commands.finish_job import FinishJob
+from bumblebee.host.api.commands.get_a_job import GetAJob
 from bumblebee.host.api.commands.start_job import StartJob
 from bumblebee.host.downloader import Downloader
 from bumblebee.host.drivers.driver_factory import DriverFactory
@@ -143,6 +144,53 @@ class TestBotWorker(object):
         worker.stop()
 
         driver_factory.get.assert_not_called()
+
+    def test_bot_has_job_available_with_mismatched_bot_id_does_nothing(self, resolver):
+        get_a_job = MagicMock(GetAJob)
+        resolver.instance(get_a_job)
+
+        bot_for_worker = Bot(
+            id=1,
+            name="Test Bot",
+            status="idle",
+            type="3d_printer"
+        )
+
+        worker: BotWorker = resolver(BotWorker, bot=bot_for_worker)
+
+        bot_for_event = Bot(
+            id=2,
+            name="Another Test Bot",
+            status="job_assigned",
+            type="3d_printer",
+            job_available=True
+        )
+
+        BotEvents.BotHasJobAvailable(bot_for_event).fire()
+
+        worker.stop()
+
+        get_a_job.assert_not_called()
+
+    def test_bot_has_job_available_calls_get_a_job(self, resolver):
+        get_a_job = MagicMock(GetAJob)
+        resolver.instance(get_a_job)
+
+        bot = Bot(
+            id=1,
+            name="Test Bot",
+            status="idle",
+            type="3d_printer",
+            job_available=True
+        )
+
+        worker: BotWorker = resolver(BotWorker, bot=bot)
+
+        BotEvents.BotHasJobAvailable(bot).fire()
+
+        worker.stop()
+
+        get_a_job.assert_called_once_with(bot.id)
 
     def test_bot_with_driver_calls_connect(self, resolver):
         driver_factory = MagicMock(DriverFactory)

@@ -4,6 +4,7 @@ from threading import Thread, Event
 from bumblebee.host import on
 from bumblebee.host.api.botqueue_api import ErrorResponse
 from bumblebee.host.api.commands.finish_job import FinishJob
+from bumblebee.host.api.commands.get_a_job import GetAJob
 from bumblebee.host.api.commands.start_job import StartJob
 from bumblebee.host.api.commands.update_job_progress import UpdateJobProgress
 from bumblebee.host.api.errors import Errors
@@ -75,6 +76,14 @@ class BotWorker(object):
         self._handle_driver()
         self._handle_job_available()
         self._handle_job_assignment()
+
+    @on(BotEvents.BotHasJobAvailable)
+    def _bot_has_job_available(self, event: BotEvents.BotHasJobAvailable):
+        if self.bot.id != event.bot.id:
+            return
+
+        get_a_job = self.resolver(GetAJob)
+        get_a_job(self.bot.id)
 
     @on(JobEvents.JobAssigned)
     def job_assigned(self, event: JobEvents.JobAssigned):
