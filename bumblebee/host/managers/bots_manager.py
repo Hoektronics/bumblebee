@@ -40,6 +40,7 @@ class BotsManager(object):
                 type=bot_json["type"],
                 driver=bot_json["driver"],
                 current_job=job,
+                job_available=bot_json["job_available"]
             )
 
             if bot.id not in self._bots:

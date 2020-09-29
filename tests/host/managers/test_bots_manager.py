@@ -49,7 +49,8 @@ class TestBotsManager(object):
                 "status": "Offline",
                 "driver": {
                     "type": "dummy"
-                }
+                },
+                "job_available": False,
             }
         ]
         resolver.instance(api)
@@ -67,6 +68,7 @@ class TestBotsManager(object):
         assert event.bot.id == 1
         assert event.bot.name == "Test bot"
         assert event.bot.status == "Offline"
+        assert not event.bot.job_available
         assert event.bot.type == "3d_printer"
         assert event.bot.driver == {"type": "dummy"}
         assert event.bot.current_job is None
@@ -84,7 +86,8 @@ class TestBotsManager(object):
                 "status": "Offline",
                 "driver": json.dumps({
                     "type": "dummy"
-                })
+                }),
+                "job_available": False,
             }
         ]
         resolver.instance(api)
@@ -102,6 +105,7 @@ class TestBotsManager(object):
         assert event.bot.id == 1
         assert event.bot.name == "Test bot"
         assert event.bot.status == "Offline"
+        assert not event.bot.job_available
         assert event.bot.type == "3d_printer"
         assert event.bot.driver == {"type": "dummy"}
         assert event.bot.current_job is None
@@ -110,7 +114,14 @@ class TestBotsManager(object):
         fakes_events.fake(BotEvents.BotAdded)
         fakes_events.fake(BotEvents.BotRemoved)
 
-        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "Offline", "driver": None}
+        bot = {
+            "id": 1,
+            "name": "Test bot",
+            "type": "3d_printer",
+            "status": "Offline",
+            "job_available": True,
+            "driver": None,
+        }
 
         api = Mock(BotQueueApi)
         api.command.side_effect = [
@@ -133,6 +144,7 @@ class TestBotsManager(object):
         assert event.bot.id == 1
         assert event.bot.name == "Test bot"
         assert event.bot.status == "Offline"
+        assert event.bot.job_available
         assert event.bot.type == "3d_printer"
         assert event.bot.driver is None
         assert event.bot.current_job is None
@@ -141,7 +153,14 @@ class TestBotsManager(object):
         fakes_events.fake(BotEvents.BotAdded)
         fakes_events.fake(BotEvents.BotRemoved)
 
-        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "Offline", "driver": None}
+        bot = {
+            "id": 1,
+            "name": "Test bot",
+            "type": "3d_printer",
+            "status": "Offline",
+            "job_available": True,
+            "driver": None,
+        }
         api = Mock(BotQueueApi)
         api.command.side_effect = [
             [bot],
@@ -164,6 +183,7 @@ class TestBotsManager(object):
         assert bot_added_event.bot.id == 1
         assert bot_added_event.bot.name == "Test bot"
         assert bot_added_event.bot.status == "Offline"
+        assert bot_added_event.bot.job_available
         assert bot_added_event.bot.type == "3d_printer"
         assert bot_added_event.bot.driver is None
         assert bot_added_event.bot.current_job is None
@@ -180,7 +200,14 @@ class TestBotsManager(object):
         fakes_events.fake(BotEvents.BotAdded)
         fakes_events.fake(BotEvents.BotRemoved)
 
-        bot = {"id": 1, "name": "Test bot", "type": "3d_printer", "status": "Offline", "driver": None}
+        bot = {
+            "id": 1,
+            "name": "Test bot",
+            "type": "3d_printer",
+            "status": "Offline",
+            "job_available": True,
+            "driver": None,
+        }
         api = Mock(BotQueueApi)
         api.command.side_effect = [
             [bot],
@@ -205,6 +232,7 @@ class TestBotsManager(object):
             assert event.bot.id == 1
             assert event.bot.name == "Test bot"
             assert event.bot.status == "Offline"
+            assert event.bot.job_available
             assert event.bot.type == "3d_printer"
             assert event.bot.driver is None
             assert event.bot.current_job is None
@@ -213,6 +241,7 @@ class TestBotsManager(object):
         assert bot_removed_event.bot.id == 1
         assert bot_removed_event.bot.name == "Test bot"
         assert bot_removed_event.bot.status == "Offline"
+        assert bot_removed_event.bot.job_available
         assert bot_removed_event.bot.type == "3d_printer"
         assert bot_removed_event.bot.driver is None
         assert bot_removed_event.bot.current_job is None
@@ -229,6 +258,7 @@ class TestBotsManager(object):
                     "name": "Test bot",
                     "type": "3d_printer",
                     "status": "Offline",
+                    "job_available": False,
                     "driver": None
                 }
             ],
@@ -238,6 +268,7 @@ class TestBotsManager(object):
                     "name": "Test bot",
                     "type": "3d_printer",
                     "status": "Idle",
+                    "job_available": True,
                     "driver": None
                 }
             ]
@@ -259,6 +290,7 @@ class TestBotsManager(object):
         assert bot_added_event.bot.id == 1
         assert bot_added_event.bot.name == "Test bot"
         assert bot_added_event.bot.status == "Offline"
+        assert not bot_added_event.bot.job_available
         assert bot_added_event.bot.type == "3d_printer"
         assert bot_added_event.bot.driver is None
         assert bot_added_event.bot.current_job is None
@@ -267,6 +299,7 @@ class TestBotsManager(object):
         assert bot_updated_event.bot.id == 1
         assert bot_updated_event.bot.name == "Test bot"
         assert bot_updated_event.bot.status == "Idle"
+        assert bot_updated_event.bot.job_available
         assert bot_updated_event.bot.type == "3d_printer"
         assert bot_updated_event.bot.driver is None
         assert bot_updated_event.bot.current_job is None
