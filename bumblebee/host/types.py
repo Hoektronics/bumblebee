@@ -50,7 +50,8 @@ class Bot(object):
                  status: str,
                  type: str,
                  current_job: Job = None,
-                 driver=None):
+                 driver=None,
+                 job_available=False):
         self.id = id
         self.name = name
         self.status = status
@@ -62,3 +63,4 @@ class Bot(object):
                 and isinstance(driver, str):
             driver = json.loads(driver)
         self.driver = driver
+        self.job_available = job_available

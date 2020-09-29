@@ -1,3 +1,4 @@
+import time
 from unittest.mock import MagicMock, Mock, call
 
 import pytest
@@ -32,6 +33,26 @@ class TestBotWorker(object):
 
         driver_factory.get.assert_not_called()
         assert not fakes_events.fired(JobEvents.JobAssigned)
+
+    def test_bot_worker_with_available_job_fires_job_available_event(self, resolver, fakes_events):
+        fakes_events.fake(BotEvents.BotHasJobAvailable)
+
+        driver_factory = MagicMock(DriverFactory)
+        resolver.instance(driver_factory)
+
+        bot = Bot(
+            id=1,
+            name="Test Bot",
+            status="job_assigned",
+            type="3d_printer",
+            job_available=True
+        )
+
+        worker: BotWorker = resolver(BotWorker, bot=bot)
+        worker.stop()
+
+        driver_factory.get.assert_not_called()
+        assert fakes_events.fired(BotEvents.BotHasJobAvailable).once()
 
     def test_bot_worker_with_job_fires_job_assigned_event(self, resolver, fakes_events):
         fakes_events.fake(JobEvents.JobAssigned)
@@ -216,6 +237,8 @@ class TestBotWorker(object):
         )
 
         worker: BotWorker = resolver(BotWorker, bot=bot)
+
+        time.sleep(0.05)
 
         driver_factory.get.assert_called_once_with(driver_config)
         dummy_driver.connect.assert_called_once()

@@ -16,16 +16,6 @@ from bumblebee.host.framework.logging import HostLogging
 from bumblebee.host.types import Bot, Job
 
 
-def _handle_job_assignment(bot: Bot):
-    if bot.current_job is None:
-        return
-
-    job = bot.current_job
-
-    if job.status == 'assigned':
-        JobEvents.JobAssigned(job, bot).fire()
-
-
 class BotWorker(object):
     def __init__(self,
                  bot: Bot,
@@ -64,11 +54,27 @@ class BotWorker(object):
             self.driver = self.resolver(DriverFactory).get(self.driver_config)
             self.driver.connect()
 
+    def _handle_job_available(self):
+        if not self.bot.job_available:
+            return
+
+        BotEvents.BotHasJobAvailable(self.bot).fire()
+
+    def _handle_job_assignment(self):
+        if self.bot.current_job is None:
+            return
+
+        job = self.bot.current_job
+
+        if job.status == 'assigned':
+            JobEvents.JobAssigned(job, self.bot).fire()
+
     @on(BotEvents.BotUpdated)
     def _bot_updated(self, event: BotEvents.BotUpdated):
         self.bot = event.bot
         self._handle_driver()
-        _handle_job_assignment(self.bot)
+        self._handle_job_available()
+        self._handle_job_assignment()
 
     @on(JobEvents.JobAssigned)
     def job_assigned(self, event: JobEvents.JobAssigned):
@@ -99,8 +105,8 @@ class BotWorker(object):
         event_manager.bind(self)
 
         self._handle_driver()
-
-        _handle_job_assignment(self.bot)
+        self._handle_job_available()
+        self._handle_job_assignment()
 
         while not self._worker_should_be_stopped.is_set():
             if self._current_job is not None:
