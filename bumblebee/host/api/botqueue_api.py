@@ -29,10 +29,14 @@ class BotQueueApi(object):
 
             response_json = response.json()
 
-            if response.ok:
-                return response_json["data"]
-            else:
-                raise ErrorResponse(
-                    code=response_json["code"],
-                    message=response_json["message"]
-                )
+            try:
+                if response.ok:
+                    return response_json["data"]
+                else:
+                    raise ErrorResponse(
+                        code=response_json["code"],
+                        message=response_json["message"]
+                    )
+            finally:
+                if response is not None:
+                    response.close()
