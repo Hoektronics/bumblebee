@@ -9,6 +9,10 @@ class Event(object):
         event_manager = resolver(EventManager)
         event_manager.fire(self)
 
+    @classmethod
+    def filter(cls):
+        pass
+
 
 class EventBag(object):
     pass

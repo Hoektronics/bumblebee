@@ -143,6 +143,7 @@ class TestBotWorker(object):
 
         worker.stop()
 
+        assert worker._current_job is None
         driver_factory.get.assert_not_called()
 
     def test_bot_has_job_available_with_mismatched_bot_id_does_nothing(self, resolver):
@@ -454,3 +455,29 @@ class TestBotWorker(object):
         worker.stop()
 
         get_a_job.assert_called_once_with(new_bot.id)
+
+    def test_bot_updated_with_different_bot_id_is_ignored(self, resolver):
+        get_a_job = MagicMock(GetAJob)
+        resolver.instance(get_a_job)
+
+        old_bot = Bot(
+            id=1,
+            name="Test Bot",
+            status="waiting",
+            type="3d_printer"
+        )
+
+        worker: BotWorker = resolver(BotWorker, bot=old_bot)
+
+        new_bot = Bot(
+            id=2,
+            name=old_bot.name,
+            status="idle",
+            type=old_bot.type,
+        )
+
+        BotEvents.BotUpdated(new_bot).fire()
+
+        worker.stop()
+
+        get_a_job.assert_not_called()

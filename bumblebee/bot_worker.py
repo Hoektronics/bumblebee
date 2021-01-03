@@ -1,5 +1,6 @@
 import time
 from threading import Thread, Event
+from typing import Optional
 
 from bumblebee.host import on
 from bumblebee.host.api.botqueue_api import ErrorResponse
@@ -11,12 +12,13 @@ from bumblebee.host.api.errors import Errors
 from bumblebee.host.downloader import Downloader
 from bumblebee.host.drivers.driver_factory import DriverFactory
 from bumblebee.host.events import JobEvents, BotEvents
-from bumblebee.host.framework.events import bind_events, EventManager
+from bumblebee.host.framework.events import bind_events
 from bumblebee.host.framework.ioc import Resolver
 from bumblebee.host.framework.logging import HostLogging
 from bumblebee.host.types import Bot, Job
 
 
+@bind_events
 class BotWorker(object):
     def __init__(self,
                  bot: Bot,
@@ -29,7 +31,7 @@ class BotWorker(object):
         self.driver_config = None
         self.driver = None
 
-        self._current_job: Job = None
+        self._current_job: Optional[Job] = None
         self._thread = Thread(target=self._run, daemon=True)
         self._worker_should_be_stopped = Event()
         self._thread.start()
@@ -72,6 +74,9 @@ class BotWorker(object):
 
     @on(BotEvents.BotUpdated)
     def _bot_updated(self, event: BotEvents.BotUpdated):
+        if self.bot.id != event.bot.id:
+            return
+
         if self.bot.status != 'idle' and event.bot.status == 'idle':
             get_a_job = self.resolver(GetAJob)
             get_a_job(self.bot.id)
@@ -108,15 +113,10 @@ class BotWorker(object):
                 self.log.info(f"Tried to set progress to {progress}, but the API says it's already higher")
             else:
                 self.log.error("Unknown exception from API", exc_info=True)
-        except Exception as e:
+        except Exception:
             self.log.error("Unknown other exception", exc_info=True)
 
     def _run(self):
-        # Bind manually, otherwise JobAssigned won't be bound to this
-        # instance when we need it in the _handle_job_assignment call
-        event_manager = self.resolver(EventManager)
-        event_manager.bind(self)
-
         self._handle_driver()
         self._handle_job_available()
         self._handle_job_assignment()
@@ -138,7 +138,7 @@ class BotWorker(object):
                 try:
                     self.driver.run(filename,
                                     update_job_progress=self._update_job_progress)
-                except Exception as ex:
+                except Exception:
                     self.log.error("Unknown exception from driver run method", exc_info=True)
                 self.log.info("Driver's run method returned")
 
