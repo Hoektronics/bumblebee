@@ -28,7 +28,7 @@ class DummyDriver(object):
             for index in range(len(lines)):
                 line = lines[index]
                 print(f"Gcode: {line.strip()}")
-                time.sleep(self.command_delay / 1000.0)
+                time.sleep(self.command_delay)
 
                 if time.time() > self._time_since_last_update + 5:
                     progress = 100.0 * (float(index) / float(len(lines)))
