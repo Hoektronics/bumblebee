@@ -6,7 +6,7 @@ class DummyDriver(object):
         self.command_delay = 100
 
         if config is not None and "command_delay" in config:
-            self.command_delay = config["command_delay"]
+            self.command_delay = float(config["command_delay"])
 
         self._time_since_last_update = 0
 
